@@ -49,6 +49,17 @@ object.size(m.sparse)
 m.dense <- GetCov(p, m, .5, F)
 object.size(m.dense)
 
+A <- chol(m.sparse)
+
+X <- replicate(p,rnorm(n)) 
+dim(X)
+dim(A)
+
+RVM <- X %*% A
+Cov <- t(RVM) %*% RVM
+dim(Cov)
+
+
 # Task 1: Generate an n x p matrix X, where each row is an
 #         observation with covariance matrix m.sparse.  Check that the covariance
 #         is correct.  Generate a plot of the first row showing that adjacent columns
