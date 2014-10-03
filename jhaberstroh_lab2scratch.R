@@ -1,4 +1,4 @@
-setwd("~/Courses/STAT215/Lab2")
+setwd("~/Courses/STAT215/STAT215A-Lab2")
 options(warn=0)
 library(maps)
 library(ggplot2)
@@ -6,10 +6,27 @@ library(dplyr)
 library(reshape2)
 library(RANN)
 library(proxy)
-pr_DB$get_entry(2)
 
 load('ling.RData')
 load("question_data.RData")
+
+BinarizeAnswers <- function(data, cols.identify){
+  data.melt <- melt(data, id.vars=cols.identify)
+  data.melt$answer <- paste(data.melt$variable,'.',data.melt$value, sep='')
+  data.melt <- data.melt[,!(names(data.melt) %in% c('variable','value'))]
+  data.melt$bin <- 1
+  #return(data.melt)
+  data.cast <- dcast(data.melt, ID ~ answer, value.var='bin', fill=0)
+  return(data.cast)
+}
+
+ling.identify <- c('ID','CITY','STATE','ZIP','lat','long')
+ling.subset <- c('CITY','STATE','ZIP','lat','long')
+
+ling.ans <- names(ling.data)[!(names(ling.data) %in% ling.identify)]
+ling.data.bin <- BinarizeAnswers(ling.data[, !names(ling.data) %in% ling.subset],'ID')
+head(ling.data.bin)
+ling.data.bin <- inner_join(ling.data[,ling.identify], ling.data.bin, by='ID')
 
 names(ling.data)
 names(ling.location)
