@@ -191,7 +191,7 @@ log.edge <- filter(log, tree=='edge')
 
 <<temp_kernel, cache=FALSE, echo=FALSE,dpi=100, fig.cap='Density plots with varying bandwidth', fig.height=5, fig.width=6 >>=
 p1 <- ggplot(log.edge, aes(x=humid_temp)) +
-  geom_density(kernel='epanechnikov', bw=1) +
+  geom_density(kernel='epanechnikov') +
   ggtitle("KDA with default bandwidth")
 p2 <- ggplot(log.edge, aes(x=humid_temp)) +
   geom_density(kernel='epanechnikov', adjust=.2) +

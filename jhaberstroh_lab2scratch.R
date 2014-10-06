@@ -33,6 +33,44 @@ BinarizeAnswers <- function(data, cols.identify){
   return(data.cast)
 }
 
+CreateGrid <- function(xseq, yseq){
+  spatial = data.frame(long=xseq)
+  spatial$all = 1
+  spatial.lat = data.frame(lat=yseq)
+  spatial.lat$all = 1
+  spatial <- inner_join(spatial, spatial.lat, by='all')
+  spatial <- spatial[,!names(spatial) %in% c('all')]
+  remove(spatial.lat)
+  return(spatial)
+}
+
+GetNNSum <- function(dataset, spatial, cols.pos, cols.sum, k=100){
+  # Create an empty dataset to populate
+  spatial.bin.merger <- data.frame(matrix(vector(), nrow(spatial), 
+                                          length(cols.sum), dimnames=list(c(), cols.sum)), 
+                                   stringsAsFactors=F)
+  spatial.nn.bin <- cbind(spatial[,c('long','lat')], spatial.bin.merger)
+  remove(spatial.bin.merger)
+  
+  #ling.bin.ans <- names(dataset)[cols.sum]
+  spatial.nnlist <- nn2(dataset[,cols.pos], 
+                        spatial.nn.bin[,cols.pos], k=k)
+  for (i in 1:nrow(spatial)) {
+    spatial.nn.bin[i,cols.sum] <- 
+      colSums(sapply(
+        ling.data.bin[spatial.nnlist$nn.idx[i,],cols.sum],as.numeric))
+  }
+  return(spatial.nn.bin)
+}
+
+ApplyHClust <- function(dataset, cluster.cols, tree.size) {
+  clusters <- hclust(dist(dataset[,cluster.cols]))
+  clusters.tree <- cutree(clusters, k=tree.size)
+  dataset[, 'cluster'] <- sapply(clusters.tree, as.character)
+  return(dataset)
+}
+
+
 # ----------------------------------------
 # Perform cleaning 
 # ----------------------------------------
@@ -80,9 +118,8 @@ plot(clust.hierarchical, cex=.4)
 # Perform a PCA on the binary data without spatial distribution
 # ----------------------------------------
 #ling.data.bin.centered <- ling.data.bin - colMeans(ling.data.bin)
-ling.data.bin.pca <- prcomp(ling.data.bin.train[,!names(ling.data.bin.train) %in% 'ID'])
-ggplot(ling.data.bin.pca$sdev) +
-  geom_line()
+ling.data.bin.pca <- prcomp(ling.data.bin.train[,!names(ling.data.bin.train) %in% ling.identify])
+qplot(seq_along(ling.data.bin.pca$sdev), ling.data.bin.pca$sdev)
 plot(ling.data.bin.pca$sdev)
 
 
@@ -113,29 +150,13 @@ remove(ling.data.bin.mainland.latlongagg)
 # ----------------------------------------
 # Create nearest neighbor spatial gridding
 # ----------------------------------------
-spatial = data.frame(long=seq(-125,-65))
-spatial$all = 1
-spatial.lat = data.frame(lat=seq(25,50))
-spatial.lat$all = 1
-spatial <- inner_join(spatial, spatial.lat, by='all')
-spatial <- spatial[,!names(spatial) %in% c('all')]
-remove(spatial.lat)
-spatial.bin.merger <- data.frame(matrix(vector(), nrow(spatial), length(ling.bin.ans), 
-                                        dimnames=list(c(), ling.bin.ans)), 
-                                 stringsAsFactors=F)
-spatial.nn.bin <- cbind(spatial[,c('long','lat')], spatial.bin.merger)
-remove(spatial.bin.merger)
 
 ling.identify <- c('ID','CITY','STATE','ZIP','lat','long')
-ling.bin.ans <- names(ling.data.bin)[!names(ling.data.bin) %in% ling.identify]
-spatial.nnlist <- nn2(ling.data.bin[,c('long','lat')], 
-                      spatial.nn.bin[,c('long','lat')], k=100)
-for (i in 1:nrow(spatial)) {
-  spatial.nn.bin[i,ling.bin.ans] <- 
-    colSums(sapply(
-      ling.data.bin[spatial.nnlist$nn.idx[i,],ling.bin.ans],as.numeric))
-}
-remove(spatial.nnlist)
+ling.ans <- names(ling.data.bin)[!names(ling.data.bin) %in% ling.identify]
+spatial.nn.bin <- GetNNSum(ling.data.bin.train, 
+                           CreateGrid(seq(-125,-65), seq(25,50)), 
+                           cols.pos=c('lat','long'), cols.sum=ling.ans)
+spatial.nn.bin.copy <- ApplyHClust(spatial.nn.bin, ling.ans, 8)
 
 # ----------------------------------------
 # Plot the nn spatial map for column Q050.4 (arbitrary)
@@ -144,19 +165,6 @@ ggplot(spatial.nn.bin) +
   geom_point(aes(x=long,y=lat,color=Q050.4), shape=7) +
   plot.map +
   plot.blank
-
-# ----------------------------------------
-# Plot the spatial map for some answer
-# ----------------------------------------
-spatial.nn.hclust <- hclust(dist(spatial.nn.bin[,ling.bin.ans]))
-tree.size <- 8
-spatial.nn.tree <- cutree(spatial.nn.hclust, k=tree.size)
-spatial.nn.bin.copy <- spatial.nn.bin
-spatial.nn.bin.copy$cluster <- NA
-for(k in 1:tree.size){
-  spatial.nn.bin.copy[spatial.nn.tree == k, 'cluster'] <- k
-}
-spatial.nn.bin.copy$cluster <- sapply(spatial.nn.bin.copy$cluster, as.character)
 
 # ----------------------------------------
 # Plot the nn spatial map for cluster
