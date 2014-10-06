@@ -86,8 +86,6 @@ ggplot(ling.data.bin.pca$sdev) +
 plot(ling.data.bin.pca$sdev)
 
 
-
-
 # ----------------------------------------
 # Plot lat & long of ling.data.bin
 # Plot maximally redundant lat/long pairs
@@ -115,9 +113,9 @@ remove(ling.data.bin.mainland.latlongagg)
 # ----------------------------------------
 # Create nearest neighbor spatial gridding
 # ----------------------------------------
-spatial = data.frame(long=seq(-125,-70, .5))
+spatial = data.frame(long=seq(-125,-65))
 spatial$all = 1
-spatial.lat = data.frame(lat=seq(25,50,.5))
+spatial.lat = data.frame(lat=seq(25,50))
 spatial.lat$all = 1
 spatial <- inner_join(spatial, spatial.lat, by='all')
 spatial <- spatial[,!names(spatial) %in% c('all')]
@@ -131,19 +129,48 @@ remove(spatial.bin.merger)
 ling.identify <- c('ID','CITY','STATE','ZIP','lat','long')
 ling.bin.ans <- names(ling.data.bin)[!names(ling.data.bin) %in% ling.identify]
 spatial.nnlist <- nn2(ling.data.bin[,c('long','lat')], 
-                      spatial.bin[,c('long','lat')], k=100)
+                      spatial.nn.bin[,c('long','lat')], k=100)
 for (i in 1:nrow(spatial)) {
   spatial.nn.bin[i,ling.bin.ans] <- 
     colSums(sapply(
       ling.data.bin[spatial.nnlist$nn.idx[i,],ling.bin.ans],as.numeric))
 }
 remove(spatial.nnlist)
+
+# ----------------------------------------
+# Plot the nn spatial map for column Q050.4 (arbitrary)
+# ----------------------------------------
 ggplot(spatial.nn.bin) +
   geom_point(aes(x=long,y=lat,color=Q050.4), shape=7) +
   plot.map +
   plot.blank
 
+# ----------------------------------------
+# Plot the spatial map for some answer
+# ----------------------------------------
+spatial.nn.hclust <- hclust(dist(spatial.nn.bin[,ling.bin.ans]))
+tree.size <- 8
+spatial.nn.tree <- cutree(spatial.nn.hclust, k=tree.size)
+spatial.nn.bin.copy <- spatial.nn.bin
+spatial.nn.bin.copy$cluster <- NA
+for(k in 1:tree.size){
+  spatial.nn.bin.copy[spatial.nn.tree == k, 'cluster'] <- k
+}
+spatial.nn.bin.copy$cluster <- sapply(spatial.nn.bin.copy$cluster, as.character)
 
+# ----------------------------------------
+# Plot the nn spatial map for cluster
+# ----------------------------------------
+ggplot(spatial.nn.bin.copy) +
+  geom_point(aes(x=long,y=lat,color=cluster), shape=15, size = 7) +
+  plot.map +
+  plot.blank +
+  scale_color_brewer(palette = 'Set3')
+
+# brewerplot <- function (palette) {
+#   p + scale_fill_brewer(palette = palette) + opts(title=palette)
+# }
+# ggplot() + brewerplot('Set1')
 
 
 
