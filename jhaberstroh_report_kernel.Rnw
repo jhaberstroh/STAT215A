@@ -1,0 +1,144 @@
+\documentclass{article}
+
+\begin{document}
+
+\section{Kernel Density}
+
+<<read_library, cache=FALSE, echo=FALSE, results=FALSE, warning=FALSE, message=FALSE>>=
+library(knitr)
+library(ggplot2)
+library(dplyr)
+library(grid)
+library(graphics)
+load("redwood_data/log.Rda")
+load('redwood_data/net.Rda')
+load('redwood_data/locs.Rda')
+locs <- filter(locs, V1 !="ID") %>%  
+  transform(V1 = as.numeric(V1), V2=as.numeric(V2)) %>% 
+  arrange(V1,V2)
+colnames(locs) <- c("nodeid", "height.m","direction","distance","tree")
+
+multiplot <- function(..., plotlist=NULL, file, cols=1, layout=NULL) {
+  require(grid)
+
+  # Make a list from the ... arguments and plotlist
+  plots <- c(list(...), plotlist)
+
+  numPlots = length(plots)
+
+  # If layout is NULL, then use 'cols' to determine layout
+  if (is.null(layout)) {
+    # Make the panel
+    # ncol: Number of columns of plots
+    # nrow: Number of rows needed, calculated from # of cols
+    layout <- matrix(seq(1, cols * ceiling(numPlots/cols)),
+                    ncol = cols, nrow = ceiling(numPlots/cols))
+  }
+
+ if (numPlots==1) {
+    print(plots[[1]])
+
+  } else {
+    # Set up the page
+    grid.newpage()
+    pushViewport(viewport(layout = grid.layout(nrow(layout), ncol(layout))))
+
+    # Make each plot, in the correct location
+    for (i in 1:numPlots) {
+      # Get the i,j matrix positions of the regions that contain this subplot
+      matchidx <- as.data.frame(which(layout == i, arr.ind = TRUE))
+
+      print(plots[[i]], vp = viewport(layout.pos.row = matchidx$row,
+                                      layout.pos.col = matchidx$col))
+    }
+  }
+}
+@
+
+<<clean_log, cache=FALSE, echo=FALSE, message=FALSE>>=
+# # Give each row an identifier that specifies which dataset it came from
+# log$dset <- 'log'
+# # Convert time from POSIXlt to POSIXct
+# log$result_time <- as.POSIXlt( as.POSIXct(log$result_time) + 300 * log$epoch )
+# log$time.dmin <- log$result_time$hour * 60 + log$result_time$min
+# log$time.day <- log$result_time$yday
+# log$time.year <- log$result_time$year
+# log$time.isdst <- log$result_time$isdst
+# drops <- c("result_time")
+# log <- log[,!(names(log) %in% drops)]
+# remove(drops)
+# # Merge location data into log
+load('redwood_data/log1.Rda')
+log <- inner_join(log, locs)
+
+# ====== clean log, complex
+# Clean for negative humidities (and NA humidies, none present in log)
+node.bad.all <- unique( filter(log, !(humid_temp > 0)) %>% select(nodeid) )
+# Clean for NA's in humidity and temperature (node 15)
+node.bad.days<- unique( filter(log, is.na(humidity) | is.na(humid_temp)) %>% 
+                          select(nodeid, time.day) )
+# Clean for bad HAMATOP points (day 314)
+node.bad.days<- rbind(node.bad.days,
+                      unique( filter(log, time.day < 315) %>%
+                          select(nodeid,time.day)) )
+
+# Trim data that goes partway through day 343 (day of death), except in nodes that carry on.
+time.day.last <- 343
+node.good.long <- unique( filter(log, time.day == 344) %>% select(nodeid) )
+
+# Apply cleaning filters
+log <- filter(log, (time.day < time.day.last) | 
+                      (nodeid %in% node.good.long$nodeid))
+log <- anti_join(log, node.bad.all , by=c('nodeid'))
+log <- anti_join(log, node.bad.days, by=c('nodeid', 'time.day'))
+
+log.interior <- filter(log, tree=='interior')
+log.edge <- filter(log, tree=='edge')
+@
+
+
+<<temp_kernel, cache=FALSE, echo=FALSE,dpi=100, fig.cap='Density plots with varying bandwidth', fig.height=5, fig.width=6 >>=
+p1 <- ggplot(log.edge, aes(x=humid_temp)) +
+  geom_density(kernel='epanechnikov') +
+  ggtitle("KDA with default bandwidth")
+p2 <- ggplot(log.edge, aes(x=humid_temp)) +
+  geom_density(kernel='epanechnikov', adjust=.2) +
+  ggtitle("KDA with adjust = 1/5")
+p3 <- ggplot(log.edge, aes(x=humid_temp)) +
+  geom_density(kernel='epanechnikov', adjust=.05) +
+  ggtitle("KDA with adjust = 1/20")
+multiplot(p1,p2,p3,cols=1)
+@
+
+The kernel density, as we vary the bandwidth, shows characteristic signatures depending on the bandwith of choice. At the large bandwidth end, we see four peaks, with the central two peaks blurring together. At the small bandwidth end, there is a strong signal that shows up at about 15 degrees, perhaps signalling problems in our dataset.
+
+\section{Loess smoothing}
+
+For exploring loess smoothing, I used a few parameters for the smoothers and looked at a set of data from 1:20pm - 2:00pm over every available day. The result was that, across the board, the higher-order fit required a larger bandwidth for stability.
+
+<<temp_humid_slicer, cache=FALSE, warning=FALSE, error=FALSE, echo=FALSE,dpi=100, fig.cap='Analysis of humidity/temperature correlation across all days, 1:20pm-2:00pm', fig.height=6, fig.width=6 >>=
+same_time <- filter(log.edge, time.dmin >=800 & time.dmin <= 840)
+p11 <- ggplot(same_time, aes(humid_temp, humidity)) +
+  stat_smooth(method='loess', span=.3, formula = y ~ poly(x,1)) +
+  geom_point(alpha=.01) +
+  ggtitle("Linear fit with bandwidth .3")
+p12 <- ggplot(same_time, aes(humid_temp, humidity)) +
+  stat_smooth(method='loess', span=5, formula = y ~ poly(x,1)) +
+  geom_point(alpha=.01) +
+  ggtitle("Linear fit with bandwidth 5")
+p21 <- ggplot(same_time, aes(humid_temp, humidity)) +
+  stat_smooth(method='loess', span=.3, formula = y ~ poly(x,3)) +
+  geom_point(alpha=.01)  +
+  ggtitle('Cubic fit with bandwith .3 (unstable)')
+p22 <- ggplot(same_time, aes(humid_temp, humidity)) +
+  stat_smooth(method='loess', span=5, formula = y ~ poly(x,3)) +
+  geom_point(alpha=.01)  +
+  ggtitle('Cubic fit with bandwith 5')
+
+multiplot(p11,p12,p21,p22,cols=2)
+@
+
+
+
+
+\end{document}

@@ -94,170 +94,202 @@ Stat 215A, Fall 2013}
 
 \maketitle
 
-\section{Kernel Density}
-
-<<read_library, cache=FALSE, echo=FALSE, results=FALSE, warning=FALSE, message=FALSE>>=
-library(knitr)
-library(ggplot2)
-library(dplyr)
-library(grid)
-library(graphics)
-load("redwood_data/log.Rda")
-load('redwood_data/net.Rda')
-load('redwood_data/locs.Rda')
-locs <- filter(locs, V1 !="ID") %>%  
-  transform(V1 = as.numeric(V1), V2=as.numeric(V2)) %>% 
-  arrange(V1,V2)
-colnames(locs) <- c("nodeid", "height.m","direction","distance","tree")
-
-multiplot <- function(..., plotlist=NULL, file, cols=1, layout=NULL) {
-  require(grid)
-
-  # Make a list from the ... arguments and plotlist
-  plots <- c(list(...), plotlist)
-
-  numPlots = length(plots)
-
-  # If layout is NULL, then use 'cols' to determine layout
-  if (is.null(layout)) {
-    # Make the panel
-    # ncol: Number of columns of plots
-    # nrow: Number of rows needed, calculated from # of cols
-    layout <- matrix(seq(1, cols * ceiling(numPlots/cols)),
-                    ncol = cols, nrow = ceiling(numPlots/cols))
-  }
-
- if (numPlots==1) {
-    print(plots[[1]])
-
-  } else {
-    # Set up the page
-    grid.newpage()
-    pushViewport(viewport(layout = grid.layout(nrow(layout), ncol(layout))))
-
-    # Make each plot, in the correct location
-    for (i in 1:numPlots) {
-      # Get the i,j matrix positions of the regions that contain this subplot
-      matchidx <- as.data.frame(which(layout == i, arr.ind = TRUE))
-
-      print(plots[[i]], vp = viewport(layout.pos.row = matchidx$row,
-                                      layout.pos.col = matchidx$col))
-    }
-  }
-}
-@
-
-<<clean_log, cache=FALSE, echo=FALSE, message=FALSE>>=
-# # Give each row an identifier that specifies which dataset it came from
-# log$dset <- 'log'
-# # Convert time from POSIXlt to POSIXct
-# log$result_time <- as.POSIXlt( as.POSIXct(log$result_time) + 300 * log$epoch )
-# log$time.dmin <- log$result_time$hour * 60 + log$result_time$min
-# log$time.day <- log$result_time$yday
-# log$time.year <- log$result_time$year
-# log$time.isdst <- log$result_time$isdst
-# drops <- c("result_time")
-# log <- log[,!(names(log) %in% drops)]
-# remove(drops)
-# # Merge location data into log
-load('redwood_data/log1.Rda')
-log <- inner_join(log, locs)
-
-# ====== clean log, complex
-# Clean for negative humidities (and NA humidies, none present in log)
-node.bad.all <- unique( filter(log, !(humid_temp > 0)) %>% select(nodeid) )
-# Clean for NA's in humidity and temperature (node 15)
-node.bad.days<- unique( filter(log, is.na(humidity) | is.na(humid_temp)) %>% 
-                          select(nodeid, time.day) )
-# Clean for bad HAMATOP points (day 314)
-node.bad.days<- rbind(node.bad.days,
-                      unique( filter(log, time.day < 315) %>%
-                          select(nodeid,time.day)) )
-
-# Trim data that goes partway through day 343 (day of death), except in nodes that carry on.
-time.day.last <- 343
-node.good.long <- unique( filter(log, time.day == 344) %>% select(nodeid) )
-
-# Apply cleaning filters
-log <- filter(log, (time.day < time.day.last) | 
-                      (nodeid %in% node.good.long$nodeid))
-log <- anti_join(log, node.bad.all , by=c('nodeid'))
-log <- anti_join(log, node.bad.days, by=c('nodeid', 'time.day'))
-
-log.interior <- filter(log, tree=='interior')
-log.edge <- filter(log, tree=='edge')
-@
-
-
-<<temp_kernel, cache=FALSE, echo=FALSE,dpi=100, fig.cap='Density plots with varying bandwidth', fig.height=5, fig.width=6 >>=
-p1 <- ggplot(log.edge, aes(x=humid_temp)) +
-  geom_density(kernel='epanechnikov') +
-  ggtitle("KDA with default bandwidth")
-p2 <- ggplot(log.edge, aes(x=humid_temp)) +
-  geom_density(kernel='epanechnikov', adjust=.2) +
-  ggtitle("KDA with adjust = 1/5")
-p3 <- ggplot(log.edge, aes(x=humid_temp)) +
-  geom_density(kernel='epanechnikov', adjust=.05) +
-  ggtitle("KDA with adjust = 1/20")
-multiplot(p1,p2,p3,cols=1)
-@
-
-The kernel density, as we vary the bandwidth, shows characteristic signatures depending on the bandwith of choice. At the large bandwidth end, we see four peaks, with the central two peaks blurring together. At the small bandwidth end, there is a strong signal that shows up at about 15 degrees, perhaps signalling problems in our dataset.
-
-For exploring loess smoothing, I used a few parameters for the smoothers and looked at a set of data from 1:20pm - 2:00pm over every available day. The result was that, across the board, the higher-order fit required a larger bandwidth for stability.
-
-<<temp_humid_slicer, cache=FALSE, warning=FALSE, error=FALSE, echo=FALSE,dpi=100, fig.cap='Analysis of humidity/temperature correlation across all days, 1:20pm-2:00pm', fig.height=6, fig.width=6 >>=
-same_time <- filter(log.edge, time.dmin >=800 & time.dmin <= 840)
-p11 <- ggplot(same_time, aes(humid_temp, humidity)) +
-  stat_smooth(method='loess', span=.3, formula = y ~ poly(x,1)) +
-  geom_point(alpha=.01) +
-  ggtitle("Linear fit with bandwidth .3")
-p12 <- ggplot(same_time, aes(humid_temp, humidity)) +
-  stat_smooth(method='loess', span=5, formula = y ~ poly(x,1)) +
-  geom_point(alpha=.01) +
-  ggtitle("Linear fit with bandwidth 5")
-p21 <- ggplot(same_time, aes(humid_temp, humidity)) +
-  stat_smooth(method='loess', span=.3, formula = y ~ poly(x,3)) +
-  geom_point(alpha=.01)  +
-  ggtitle('Cubic fit with bandwith .3 (unstable)')
-p22 <- ggplot(same_time, aes(humid_temp, humidity)) +
-  stat_smooth(method='loess', span=5, formula = y ~ poly(x,3)) +
-  geom_point(alpha=.01)  +
-  ggtitle('Cubic fit with bandwith 5')
-
-multiplot(p11,p12,p21,p22,cols=2)
-@
-
 \section{Introduction}
 
 In the study of dialects, there is a long-standing connundrum about the relation of regional dialects and spatial distribution of particular linguistic choices. While it is evidently possible to qualitatively identify a person's regional dialect in practice, the analysis of any particular linguistic choice does not generate these boundaries. Here, we attempt to take the "blind" approach: to use extensive data across multiple linguistic features to generate those boundaries that are spatially pertinent, without explicit reference to the boundaries themselves.
 
-
-
 \section{The Data}
 
+This data is linguistic survey data collected from the internet pertaining to a person's common english language word choice. 
 
 \subsection{Data quality and cleaning}
 
-This dataset isn't as bad as the redwood data, but there are still
-some issues. You should discuss them here and describe your strategies
-for dealing with them.
+For simplicity, I deleted all rows with instances of NA from my dataset. This removed about 2\% of the data, which I deemed acceptable. Many question responses were missing, labelled with a zero. These responses were left in the data set and handled further downstream.
 
+To create a spatial grid of data that did not depend on the local density of responses, I used a nearest-neighbor search. For each point on the grid, the k=100 nearest neighbors were found. Then, these 100 neighbors' "binarized" responses were added together. At this point, zeros were omitted from responses; thus, each question was not necessarily normalized to 100 responses. 
+
+It was assumed that zero-responses were from either respondent uncertainty or simple malfunction. Assuming the malfunctions to be randomly distributed and the respondent uncertainty to be meaningful, the resulting bins of fraction of non-zero responses of the 100 nearest neighbors were assumed to be meaningful. 
 
 \subsection{Exploratory Data Analysis}
 
-This is where you compare pairs of questions with discussion and plots.
+<<init_ling, cache=FALSE, warning=FALSE, message=FALSE, echo=FALSE >>=
+source("jhaberstroh_ling_methods.R")
+
+# ----------------------------------------# Perform cleaning 
+ling.data <- filter(ling.data, !is.na(lat) & !is.na(long))
+# ----------------------------------------# Create binary dataset 
+ling.identify <- c('ID','CITY','STATE','ZIP','lat','long')
+ling.subset <- c('CITY','STATE','ZIP','lat','long')
+ling.ans <- names(ling.data)[!(names(ling.data) %in% ling.identify)]
+ling.data.bin <- BinarizeAnswers(ling.data[, !names(ling.data) %in% ling.subset],'ID')
+ling.data.bin <- inner_join(ling.data[,ling.identify], ling.data.bin, by='ID')
+remove(ling.identify)
+remove(ling.subset)
+remove(ling.ans)
+# ----------------------------------------# Create training/validation dataset 
+n.train <- 10000
+n.rows <- nrow(ling.data.bin)
+ling.samples.train <- sample(n.rows,n.train)
+ling.data.bin.train <- ling.data.bin[ling.samples.train,]
+ling.data.bin.valid <- ling.data.bin[!seq(1, n.rows) %in% ling.samples.train,]
+@
+
+<<hclust_people, echo=FALSE, warning=FALSE, message=FALSE, fig.cap="Heirarchical clustering on individuals shows excessive sensitivity to particular outliers. Data may give a sense of the natural variation of responses.", fig.height=4>>=
+# ----------------------------------------
+# Perform heirarchical clustering on all of the data 
+# ----------------------------------------
+SeguyDist <- function(data) dist(data, method=function(x, y)  sum(x!=y))
+
+ling.ans <- names(ling.data)[!names(ling.data) %in% c('ID', 'CITY','STATE','ZIP','lat','long')]
+n.sample <- 2000
+ling.data.mainland <- filter(ling.data, -65 > long & long > -125 & 50 > lat & lat > 25)
+ling.data.hclust <- ling.data.mainland[sample(nrow(ling.data.mainland),n.sample), ]
+ling.data.hclust <- ApplyHClust(ling.data.hclust, 
+                                dist_method=SeguyDist, 
+                                cluster.cols=ling.ans)
+ggplot(ling.data.hclust, aes(x=long, y=lat, color=cluster8)) +
+  geom_point(alpha=.8) +
+  scale_color_brewer(palette = 'Set1')
+@
+
+To explore the data, first I took all of the responses from the data, and I generated a distance function between two elements. This distance function is that used by Seguy: the distance is the number of elements which are not shared in common. This allows us to immediately begin clustering data with a non-metric method. Thus, I began by using a heirarchical clustering.
+
+It was clear from this initial clustering that this did not create a geographical distribution of responses. Furthermore, the maximum variation generated by individiuals was larger than that generated by spatial variation. This indicated that spatial aggregation would be necessary to reduce variance from individuals within a region, to be able to see the broader trend.
+
+I also wanted to explore the number of redundant area codes that showed up in the raw data. 
+
+
+<<ling_areacode, echo=FALSE, fig.cap="Redunancy in area code shows a strong signal near Minneapolis. This feature emerges in the heirarchical clustering of spatially coarse grained data.", fig.height=4>>=
+ling.data.bin.mainland <- filter(ling.data.bin, lat < 53 & long > -140)
+ling.data.bin.mainland.latlongagg <- group_by(ling.data.bin.mainland, lat, long) %>% 
+  summarize(n=n())
+max = head(ling.data.bin.mainland.latlongagg[
+    with(ling.data.bin.mainland.latlongagg, order(-n)),],100)
+ggplot(data=NULL) +
+  plot.map + 
+  plot.blank +
+  geom_point(data=max, aes(x=long, y=lat, color=n), size=3, alpha=.9)
+@
 
 
 \section{Dimension reduction methods}
 
-This is where you discuss and show plots about the results of whatever
-dimension reduction techniques you tried - PCA, hierarchical clustering,
-K-means, random projections, etc.
+<<spatial_hclust, echo=FALSE, message=FALSE, warning=FALSE, fig.cap="Clusters formed from spatial data shows much more regularity and the iterative emergece of cultural regions is apparent -- save for the outliers in Minneapolis and Denver.", fig.height=4>>=
+# # Create nearest neighbor spatial gridding
+# # ----------------------------------------
+# ling.identify <- c('ID','CITY','STATE','ZIP','lat','long')
+# ling.ans <- names(ling.data.bin)[!names(ling.data.bin) %in% ling.identify]
+# spatial.nn.bin <- GetNNSum(ling.data.bin, 
+#                            CreateGrid(seq(-125,-65,.5), seq(25,50,.5)), 
+#                            cols.pos=c('lat','long'), cols.sum=ling.ans)
+# # Perform hclust on nn grid
+# # ----------------------------------------
+# spatial.nn.bin.copy <- ApplyHClust(spatial.nn.bin, dist_method=dist,
+#                                    cluster.cols=ling.ans)
+# 
+# save(spatial.nn.bin, spatial.nn.bin.copy, file='hclust_file.Rda')
 
+# Plot the nn spatial map for cluster
+# ----------------------------------------
+load('hclust_file.Rda')
+p3 <- ggplot(spatial.nn.bin.copy) +
+  geom_point(aes(x=long,y=lat,color=cluster3), shape=15, size = 4, alpha=.6) +
+  plot.map +
+  plot.blank +
+  scale_color_brewer(palette = 'Set3')
+p5 <- ggplot(spatial.nn.bin.copy) +
+  geom_point(aes(x=long,y=lat,color=cluster5), shape=15, size = 4, alpha=.6) +
+  plot.map +
+  plot.blank +
+  scale_color_brewer(palette = 'Set3')
+p6 <- ggplot(spatial.nn.bin.copy) +
+  geom_point(aes(x=long,y=lat,color=cluster6), shape=15, size = 4, alpha=.6) +
+  plot.map +
+  plot.blank +
+  scale_color_brewer(palette = 'Set3')
+p8 <- ggplot(spatial.nn.bin.copy) +
+  geom_point(aes(x=long,y=lat,color=cluster8), shape=15, size = 4, alpha=.6) +
+  plot.map +
+  plot.blank +
+  scale_color_brewer(palette = 'Set3')
+multiplot(p3,p5,p6,p8, cols=2)
+@
+
+\subsection{Hierarchical Clustering of spatialized data}
+
+To produce more stable clusters, the sptailization method described in the data cleaning was used. After performing this clustering, a standard minkowski distance was used for the clustering. This is a reasonable metric to use because the data now spans the range of 0-100, and a minkowski distance will create more distance between quite similar pairs and less distance between quite dissimilar pairs. This will reduce the effect of extreme outliers.
+
+When we analyze the clusters generated, we find that the heirarchical clustering captures layers of relatedness that first separates Northeast, South, and West, then it goes on to separate Florida from the south, Pennsylvania from the Northeast, and to create a band between Wisconsin/Minnesota/Wisconsin and the South or East. To my cultural understanding, all of these distinctions are relevant and interesting. 
+
+One of the problems with this clustering, though, is the association of spatially distinct clusters with one another. Further cutting of the tree, as shown in the Cluster-8 diagram, does not serve to resolve these associations; it instead creates groups near the borders of previous regions that likely have intermediate linguistic properties.
+
+\subsection{PCA binning}
+
+After analyzing this data, it is interesting to ask whether there are questions with maximal and minimal variance that vary from region to region. The natural analysis for this is a principal component analysis -- to see whether there are principal components within subsets of our macroscopic dataset.
+
+<<cluster_PCA, echo=FALSE, warning=FALSE,message=FALSE, fig.cap='PCA analysis for the south, i.e. cluster 3 of 6 from the cluster6 analysis', fig.height=3>>=
+ling.identify <- c('ID','CITY','STATE','ZIP','lat','long')
+ling.ans <- names(spatial.nn.bin)[!(names(spatial.nn.bin) %in% ling.identify)]
+nn.pca.c6.3 <- CenteredPCA(filter(spatial.nn.bin.copy, cluster6 == 3),ling.ans)
+p1 <- qplot(seq_along(nn.pca.c6.3$sdev), nn.pca.c6.3$sdev) +
+  scale_y_log10()
+p1
+@
+
+<<cluster_PCA_2, echo=FALSE, warning=FALSE,message=FALSE, fig.cap='PCA analysis for the south, i.e. cluster 3 of 6 from the cluster6 analysis', fig.height=4>>=
+p2 <- PCAComponentPlot(nn.pca.c6.3$rot, 20,end=TRUE, title='Loading of lowest eigenvectors for the south')
+p2
+@
+
+<<cluster_PCA_3, echo=FALSE, warning=FALSE,message=FALSE, fig.cap='PCA analysis for the south, i.e. cluster 3 of 6 from the cluster6 analysis',fig.height=4>>=
+PCAComponentPlot(nn.pca.c6.3$rot, 20,end=FALSE, title='Loading of largest eigenvectors for the south')
+@
+
+In this analysis, it seems that the lowest eigenvectors live in some sort of textured subspace of the data, while the largest eigenvectors are pretty well distributed among all of the responses. There are a few questions that stick out above the signal for the largest eigenvectors, but their loadings are pretty far from 1.
 
 \section{Stability of findings to perturbation}
+There was not sufficient time for thorough stability analysis, but the results were stable to a coarsening of the grid by an area factor of 4, as demonstrated below. Many of the fine features of the borders disappear, but the important regional trends remain.
 
+
+<<coarse_cluster, echo=FALSE, fig.cap='A coarser validation of the clustering analysis', fig.height=4>>=
+# Create nearest neighbor spatial gridding
+# ----------------------------------------
+ling.identify <- c('ID','CITY','STATE','ZIP','lat','long')
+ling.ans <- names(ling.data.bin)[!names(ling.data.bin) %in% ling.identify]
+spatial.nn.bin <- GetNNSum(ling.data.bin, 
+                           CreateGrid(seq(-125,-65), seq(25,50)), 
+                           cols.pos=c('lat','long'), cols.sum=ling.ans)
+# Perform hclust on nn grid
+# ----------------------------------------
+spatial.nn.bin.copy <- ApplyHClust(spatial.nn.bin, dist_method=dist,
+                                   cluster.cols=ling.ans)
+
+p3 <- ggplot(spatial.nn.bin.copy) +
+  geom_point(aes(x=long,y=lat,color=cluster3), shape=15, size = 4, alpha=.6) +
+  plot.map +
+  plot.blank +
+  scale_color_brewer(palette = 'Set3')
+p5 <- ggplot(spatial.nn.bin.copy) +
+  geom_point(aes(x=long,y=lat,color=cluster5), shape=15, size = 4, alpha=.6) +
+  plot.map +
+  plot.blank +
+  scale_color_brewer(palette = 'Set3')
+p6 <- ggplot(spatial.nn.bin.copy) +
+  geom_point(aes(x=long,y=lat,color=cluster6), shape=15, size = 4, alpha=.6) +
+  plot.map +
+  plot.blank +
+  scale_color_brewer(palette = 'Set3')
+p8 <- ggplot(spatial.nn.bin.copy) +
+  geom_point(aes(x=long,y=lat,color=cluster8), shape=15, size = 4, alpha=.6) +
+  plot.map +
+  plot.blank +
+  scale_color_brewer(palette = 'Set3')
+multiplot(p3,p5,p6,p8, cols=2)
+@
 
 \section{Conclusion}
+From this blind analysis, we were able to extract a culturally relevant partition of the united states. This analysis did not leverage much domain knowledge of linguistics; a deeper analysis that included correlations and clustering of questions themselves into categories would be able to more robustly analyze regions without resulting in a "crumbly" edge as the number of clusters increased.
+
+Furthermore, a predictive aspect to the analysis seems possible from this starting point. Given the large individual variability discovered from the first clustering, there would be much to learn from a predictive methodology. Ways of accounting for the variability that is spread across all of the answers from within region to region will be crucial for prediction.
+
 \end{document}
