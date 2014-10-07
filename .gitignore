@@ -1,8 +1,6 @@
 *.swp
 .Rproj.user
-jhaberstroh_report.tex
-jhaberstroh_report.synctex.gz
-jhaberstroh_report.log
-jhaberstroh_report.pdf
-jhaberstroh_report-concordance.tex
+*.tex
+*.log
+*.gz
 figure
