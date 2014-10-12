@@ -3,7 +3,7 @@
 library('Rcpp')
 library('microbenchmark')
 
-working.directory <- "/Users/newuser/Courses/STAT215/REPO/Lab3/lab_session"
+working.directory <- "/home/jhaberstroh/Courses/STAT215/REPO/Lab3/lab_session"
 
 # Flags for openMP.  If you're not using openMP, you don't need these.
 Sys.setenv("PKG_CXXFLAGS"="-fopenmp")
