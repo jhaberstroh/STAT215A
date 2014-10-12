@@ -3,6 +3,6 @@
 *.tex
 *.log
 *.gz
-.RData
+*.RData
 .Rhistory
 figure
