@@ -1,0 +1,103 @@
+\documentclass{article}
+\usepackage{amsmath}
+\usepackage{amssymb}
+
+\begin{document}
+
+% See excellent documentation at:
+% http://yihui.name/knitr/
+% http://yihui.name/knitr/demo/minimal/
+% http://yihui.name/knitr/options
+% ...as well as the manual knitr-manual.pdf, saved in this directory.
+
+<<read_library, cache=FALSE, echo=FALSE, message=FALSE>>=
+library(knitr)
+library(ggplot2)
+library(dplyr)
+options(warn=0)
+
+source("~/Courses/STAT215/labsession1-2/normal_point_mixture_lib.R")
+source("~/Courses/STAT215/labsession1-2/kernel_density_lib_0.R")
+opts_chunk$set(fig.width=5, fig.height=3, fig.pos='h!', fig.align='center', echo=FALSE, message=FALSE)
+@
+
+<<generate_data, cache=FALSE, echo=FALSE>>=
+n <- 5e3
+x <- seq(-3, 3, length.out=3000)
+p.1  <- rep(0.5, 2)
+means.1 <- c(-1, 1)
+sds.1 <- rep(0.4, 2)
+data1 <- NormalPointMixtureDraws(n, p=p.1, means=means.1, sds=sds.1)
+pdf1 <- NormalPointMixtureDensity(x=x, p=p.1, mean=means.1, sds=sds.1)
+@
+
+\title{Kernel Density Estimators}
+\author{John Haberstroh}
+\maketitle
+
+We will be exploring the performance of kernel estimators on the distribution shown in figure \ref{fig:plot_raw_data}.
+
+<<plot_raw_data, fig.cap="Raw data from a point mixture of normals">>=
+ggplot() +
+  geom_histogram(aes(x=data1, y=..density..), fill=NA, color="blue") +
+  geom_line(aes(x=x, y=pdf1), lwd=2)
+@
+
+For all tasks, include a little text in this document about what you are doing.  When you're done, you'll have an R library and knitted pdf document.
+
+TASK 1: Complete the Kernel function and plot it.
+
+<<kernel_plot, fig.cap="The raw kernel">>=
+kernel = data.frame(x=seq(from=-4,to=4,length.out=150))
+kernel$y <- Kernel(kernel$x,1)
+ggplot(data=kernel) +
+  geom_line(aes(x=x, y=y))
+@
+
+
+TASK 2: Complete the EstimateDensity function and try fitting it to your data with some different bandwidhts.
+
+<<fit_data, fig.cap="Applying the kernel to the data">>=
+source("~/Courses/STAT215/labsession1-2/normal_point_mixture_lib.R")
+source("~/Courses/STAT215/labsession1-2/kernel_density_lib_0.R")
+length(data1)
+kernel.dframe <- EstimateDensity(data1,Kernel,1,eval.x=seq(-4,4,length.out=100))
+ggplot(kernel.dframe) +
+  geom_line(aes(x=x, y=f.hat))
+@
+
+TASK 3: Complete the PerformSimulations function and make plots of the bias and variance.
+
+
+<<perform_sims, fig.cap="Proof of concept!">>=
+
+simulation <- PerformSimulations(5,n=1000,p=p.1, means=means.1,sds=sds.1,eval.x=seq(-4,4,length.out=100),KernelFun=Kernel,h=1)
+ggplot(simulation) +
+  geom_line(aes(x=x, y=f.hat)) + 
+  geom_line(aes(x=x, y=true.pdf))
+@
+
+
+TASK 4: Explore how the bias and variance changes as a function of the bandwidth.
+<<bandwidth, fig.cap="Exploring bandwidths">>=
+
+simulation <- PerformSimulations(5,n=1000,p=p.1, means=means.1,sds=sds.1,eval.x=seq(-4,4,length.out=100),KernelFun=Kernel,h=1)
+ggplot(simulation) +
+  geom_line(aes(x=x, y=f.hat)) + 
+  geom_line(aes(x=x, y=true.pdf)) +
+  ggtitle("h=1")
+
+simulation <- PerformSimulations(5,n=1000,p=p.1, means=means.1,sds=sds.1,eval.x=seq(-4,4,length.out=100),KernelFun=Kernel,h=.1)
+ggplot(simulation) +
+  geom_line(aes(x=x, y=f.hat)) + 
+  geom_line(aes(x=x, y=true.pdf)) +
+  ggtitle("h=.1")
+
+simulation <- PerformSimulations(5,n=1000,p=p.1, means=means.1,sds=sds.1,eval.x=seq(-4,4,length.out=100),KernelFun=Kernel,h=2)
+ggplot(simulation) +
+  geom_line(aes(x=x, y=f.hat)) + 
+  geom_line(aes(x=x, y=true.pdf)) +
+  ggtitle("h=2")
+@
+
+\end{document}

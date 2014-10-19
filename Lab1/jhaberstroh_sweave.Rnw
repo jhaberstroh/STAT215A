@@ -1,0 +1,274 @@
+%% LyX 2.0.6 created this file.  For more info, see http://www.lyx.org/.
+%% Do not edit unless you really know what you are doing.
+\documentclass[english]{article}
+\usepackage{fancyhdr}
+\pagestyle{fancy}
+\setlength{\parskip}{\smallskipamount}
+\setlength{\parindent}{0pt}
+\usepackage{amsthm}
+\usepackage{amsmath}
+\begin{document}
+
+\title{Lab 1 - Redwood Data\\
+Stat 215A, Fall 2014}
+
+
+\author{John Haberstroh}
+
+\maketitle
+
+\section{Introduction}
+
+Data from a macroscope for coastal redwood trees is considered. This data is to be cleaned, and trends are explored. 
+
+\section{The Data}
+
+For our dataset, there are a number of static and dynamical variables. The static variables describe the identity of our sensor. This is comprised of:
+\begin{itemize}
+\item nodeid (appx 1-200)
+\item height (meters)
+\item distance (meters)
+\item direction (cardinal direction)
+\item starting time (date and time)
+\end{itemize}
+
+Dynamical varibales were measured at 5-minute intervals. These variables were comprised of:
+\begin{itemize}
+\item epoch, counting quantity of 5-minutes from starting time
+\item temperature (Celsius)
+\item humidity (percentage)
+\item indicent Photosynthetically Active Radiation (PAR) (nmol/m$^2$/s)
+\item ambient Photosynthetically Active Radiation (PAR) (nmol/m$^2$/s)
+\end{itemize}
+
+There were two datasets, log and net, collected locally and over a wireless transimission respectively.
+
+\subsection{Data Collection }
+
+For measuring ambient and incident light, the authors use Hamamatsu S1087 photodiodes with 10-bit depth and sensitivity to Photosynthetically Active Radiation (PAR). The device was constructued to have a lower compartment that shields from direct sunlight and an upper compartment that receives direct sunlight. The detector error was not specified, but it is likely that the error of nodes relative to eachother will be larger than a node relative to itself. Furthermore, hhe intensity of light at a particular position may vary faster than the measurement rate of one measurement/5 minutes; thus, these measurements should be examined and processed carefully to find robust indicators.
+
+The humidity was measured with the Sensirion SHT11 digital sensor. This device provides precision on humidity up to $\pm$3.5\%. Humidity measurements should be more intrinsically robust than incident light, as the wind speeds inside of trees is not tremendous, and humidity will vary fastest with the aid of air currents.
+
+\subsection{Data Cleaning}
+
+<<read_library, cache=FALSE, echo=FALSE, message=FALSE>>=
+library(knitr)
+library(ggplot2)
+library(dplyr)
+library(zoo)
+@
+
+<<load_data, cache=FALSE, echo=FALSE, message=FALSE>>=
+# Clean locs by converting to numerics -- WARNING: decimal data is mangled because language stinks
+load("data/log.Rda")
+load('data/net.Rda')
+load('data/locs.Rda')
+@
+
+<<clean_locs, cache=FALSE, echo=FALSE, message=FALSE>>=
+# Clean locs by converting to numerics -- WARNING: decimal data is mangled because language stinks
+locs <- filter(locs, V1 !="ID") %>%  
+  transform(V1 = as.numeric(V1), V2=as.numeric(V2)) %>% 
+  arrange(V1,V2)
+colnames(locs) <- c("nodeid", "height.m","direction","distance","tree")
+@
+
+<<clean_log, cache=FALSE, echo=FALSE, message=FALSE>>=
+# # Give each row an identifier that specifies which dataset it came from
+# log$dset <- 'log'
+# # Convert time from POSIXlt to POSIXct
+# log$result_time <- as.POSIXlt( as.POSIXct(log$result_time) + 300 * log$epoch )
+# log$time.dmin <- log$result_time$hour * 60 + log$result_time$min
+# log$time.day <- log$result_time$yday
+# log$time.year <- log$result_time$year
+# log$time.isdst <- log$result_time$isdst
+# drops <- c("result_time")
+# log <- log[,!(names(log) %in% drops)]
+# remove(drops)
+# # Merge location data into log
+load('data/log1.Rda')
+log.merge <- inner_join(log, locs, by=c('nodeid'))
+log.missing <- anti_join(log,locs, by=c('nodeid'))
+log.missing <- log.missing[,c("nodeid","epoch")]
+
+
+# ====== clean log, complex
+# Clean for negative humidities (and NA humidies, none present in log.merge)
+node.bad.all <- unique( filter(log.merge, !(humid_temp > 0)) %>% select(nodeid) )
+# Clean for NA's in humidity and temperature (node 15)
+node.bad.days<- unique( filter(log.merge, is.na(humidity) | is.na(humid_temp)) %>% 
+                          select(nodeid, time.day) )
+# Clean for bad HAMATOP points (day 314)
+node.bad.days<- rbind(node.bad.days,
+                      unique( filter(log.merge, time.day < 315) %>%
+                          select(nodeid,time.day)) )
+
+# Trim data that goes partway through day 343 (day of death), except in nodes that carry on.
+time.day.last <- 343
+node.good.long <- unique( filter(log.merge, time.day == 344) %>% select(nodeid) )
+
+# Apply cleaning filters
+log.merge <- filter(log.merge, (time.day < time.day.last) | 
+                      (nodeid %in% node.good.long$nodeid))
+log.merge <- anti_join(log.merge, node.bad.all , by=c('nodeid'))
+log.merge <- anti_join(log.merge, node.bad.days, by=c('nodeid', 'time.day'))
+
+log.merge.interior <- filter(log.merge, tree=='interior')
+log.merge.edge <- filter(log.merge, tree=='edge')
+@
+
+To clean the dataset, I first merged nodes with location data, keeping only the nodes that had a specified height and tree. I only worked with the log dataset, because that dataset was larger after the merge by about a factor of two. I could not merge the two datasets directly because their dates were offset by several months. These sets could be combined if the seasonal effects are accounted for.
+
+After this initial merge, I converted epoch and timestamp information into time.dmin, time.day, and time.year. This allows for a more familiar temporal analysis, and easy ways to slice data by day/time. For the computation, each epoch value was multiplied by 5 mins and added to time, and the resulting timeseries seem consistent with one another. Whether a systematic offset of ~5mins is present in any sample is not clear, since weather patterns may have delays of a similar order of magnitude due to spaital variation within the tree.
+
+To further clean the data set, I performed a range analysis to find quantities that were not valid. The invalid quantities discovered were (a) one node which produced only negative humidities for its entire lifespan and (b) one node which produced NA starting partway through its lifespan until its final entry. All nodes with negative humidities were entirely removed from the dataset, and all data was removed from days with NA entries on a day-by-day basis. There were also some humidities above 100, but these came from seemingly functional detectors, and were thus left in the dataset under the assumption that they came from calibration errors, and were just randomly distributed around the mean. No effort was made to modify the calibration.
+
+For Incident PAR, outlier data was found near the beginning of the dataset. There, a much greater range of values was measured on all detectors. Examining this data closer, it seemed to have a character dissimilar from all other days. This may be due to calibration from turning on. Because this first day started near noon and its behavior was uncharacteristic, these early data were removed.
+
+\subsection{Data Exploration}
+
+The distributions for incident light were quite complicated to interpret. The variability of the incident light was more exponentially distributed than gaussian distributed, so means had noise that was dominated by fluctuations to the tail. In photosynthesis, there are two main aspects of the response to light: first, the response of power generated to light is approximately linear until it saturates, and second, an excess of light causes photodamage. Thus, the most physically relevant analyses would consider separately the amount of power received by the plant and the amount of time spent in dangerous light. This type of analysis would separate the tail from the body of the distribution, and would likely lead to a robust analysis. 
+
+% <<light_plot, echo=FALSE, fig.cap="Incident light with height">>=
+% # ggplot(log.merge.interior) + 
+% #   geom_line(aes(x=(time.dmin+time.day*1440)/1440, y=hamatop, alpha=.1)) 
+% 
+% ggplot(filter(log.merge, (time.day < time.day.last) & (direction=='SW' | direction=='WSW')) %>%
+%        group_by(nodeid, height.m, time.dmin, tree, distance) %>%
+%        summarise(light.total.top=mean(hamatop),light.total.bot=mean(hamabot))) +
+%   geom_line(aes(x=time.dmin,y=light.total.top, 
+%                 color=height.m, group=nodeid, alpha=0.05)) +  
+%   ggtitle("Mean incident PAR with height over all days")
+% @
+
+<<light_plot, echo=FALSE, fig.cap="Incident light in time, with heights indicated by color. The higher heights are above the lower heights in many cases, but a simple averaging fails to reveal this trend. ">>=
+# ggplot(log.merge.interior) + 
+#   geom_line(aes(x=(time.dmin+time.day*1440)/1440, y=hamatop, alpha=.1)) 
+
+ggplot(filter(log.merge,  time.day <= 318 & 
+                          (direction=='SW' | direction=='WSW'))) +
+  geom_point(aes(x=(time.dmin + 1440*time.day)/1440,y=hamatop, 
+                color=height.m, group=height.m, alpha=0.05)) +  
+  xlab('Day, ISO numeric format from Jan 1st') +
+  ggtitle("Mean incident PAR with height over first  days")
+@
+
+<<light_plot_logavg, echo=FALSE, fig.cap="Incident light in time, with heights indicated by color. The higher heights are above the lower heights in many cases, but a simple averaging fails to reveal this trend. ">>=
+# ggplot(log.merge.interior) + 
+#   geom_line(aes(x=(time.dmin+time.day*1440)/1440, y=hamatop, alpha=.1)) 
+
+ggplot() + 
+  geom_line(data = filter(log.merge,  time.day <= time.day.last & 
+                          (direction=='SW' | direction=='WSW')) %>%
+                  group_by(nodeid, height.m, time.dmin) %>%
+                  summarise(hamatop=mean(log10(hamatop))),
+            aes(x=time.dmin,y=hamatop, color=height.m, group=height.m),
+            alpha=.6,
+            palette='Spectral') +
+  geom_point(data = filter(log.merge,  time.day <= 318 & 
+                          (direction=='SW' | direction=='WSW')), 
+            aes(x=time.dmin,y=log10(hamatop), color=height.m, group=height.m), 
+            alpha=0.04) + 
+  xlab('Day, ISO numeric format from Jan 1st') +
+#  scale_y_log10(1e3,1.5e5)+
+  ylab('log of Incident PAR') +
+  scale_color_gradient2(space="Lab", midpoint=50, low='blue',mid='yellow',high='red',limits=c(20, 80)) +
+  ggtitle("Mean-log10 of incident PAR with height over all days")
+@
+
+
+
+% <<light_with_height, cache=FALSE, echo=FALSE, message=FALSE>>=
+% # Find the days with peak consistent activity
+% #group_by(log.merge, nodeid) %>% summarise(n())
+% day.hist <- group_by(log.merge, time.day) %>% summarise(n=n())
+% peak.days.time.day <- filter(day.hist,n==8352)$time.day
+% peak.days <- group_by(log.merge, nodeid) %>%
+%   filter(time.day %in% peak.days.time.day)
+% #summarise(peak.days, n=n())
+% peak.days.nodeid <- unique(peak.days$nodeid)
+% # Filter to peak-day nodes
+% locs.directions <- filter(locs, nodeid %in% peak.days.nodeid) %>%
+%   group_by(direction) %>%
+%   summarise(n=n())
+% # Compute suntime, the amount of sun averaged over the same time of day on different days
+% suntime.byday <- 
+% suntime.bymin <- filter(log.merge, direction=='SW' | direction=='WSW') %>%
+%   group_by(height.m, time.dmin, tree, distance) %>%
+%   summarise(light.total.top=mean(hamatop),light.total.bot=mean(hamabot)) %>%
+%   filter(!is.na(light.total.top) & !is.na(light.total.bot))
+% @
+% 
+% <<top_tree_plot, echo=FALSE, fig.cap="Incident PAR, summed over 24hrs, avg of three days near Nov 20" >>=
+% ggplot(filter(suntime.byday, tree=='edge') %>% group_by(height.m,distance,tree) 
+%        %>% summarise(light.total.top=mean(light.total.top)) ) +
+%   geom_point(aes(x=distance, y=height.m,color=light.total.top)) +
+%   ggtitle("Daily total PAR")
+% @
+% 
+% <<bot_tree_plot, echo=FALSE, fig.cap="Ambient PAR, summed over 24hrs, avg of three days near Nov 20">>=
+% ggplot(group_by(suntime.byday,height.m,distance) 
+%        %>% summarise(light.total.bot=mean(light.total.bot)) ) +
+%   geom_point(aes(x=distance,y=height.m,color=light.total.bot)) +
+%   ggtitle("Reflected PAR with height, three days near Nov 20")
+% @
+
+
+
+\section{Graphical Critique}
+
+Next we will examine the plots presented from Figure 3 and 4. Figure 3(a) attempts to get a sense of the scale of data that we encounter, without considering time or height. This can verify that we are within the valid working range for our sensors. We can also get a general sense of the distribution of data: do the fluctuations within certain control parameters (e.g. time or height) dominate the local mean, or is the signal already demonstrating features relating to the local mean?
+
+\paragraph{Figure 3(a)} This plot has problems by representing qualitatively different distributions with the same method. This bar graph does very little to capture the distributions seen with only 10 bars. For both temperature and relative humidity, a kernel smoothing function would be more appropriate due to the fairly dense and uniform points. For incident and reflected PAR, the tremendous number of 0 values make the plot difficult to interpret. A log plot would be clearer, with all zeros binned together.
+
+\paragraph{Figure 3(b) and (c)} These plots deconvolute the effect of date and height, respectively. Averages are performed over the course of the day or over all days, respectively. Plot 3(b) demonstrates the importance of date for both temperature and humidity, while the importance of date for PAR is less clear. Plot 3(c) demonstrates the slight trend in temperature and humidity with height, and discovers a potential outlier/malfunctioning node at 64.5m. The significance of this trend is unclear, especially with the high variability in each measurement; the standard error of the mean could clarify the certainty of this trend.
+There is also a trend of increasing variability with height in both types of PAR. Again, as in plot 3(a), the large numbers of 0's in the PAR measurements make the plots difficult to interpret; in this case, almost every box is populated by only outliers. Furthermore, since we already know the data for incident PAR should be bimodal from 3(a), a box plot is innapropriate to capture trends. A box plot in the logarithm may be an improvement, but fails to capture any bimodality.
+
+\paragraph{Figure 3(d)} This plot removes the mean of all sensors (heights) from the data at all points in time. These distributions are shown to be quite narrow for nearly all readings, but with extremely long tails. These narrow bodies and long tails make the box plots less revealing than they might be. If the mean is of interest (as is likely the case for PAR), then these plots conceal that information. There is also the problem that our heights are not evenly distributed -- thus, taking a direct average of the nodes will weight our mean for each time slice towards the region with a higher point density (the top). These plots show us that the trend from 3(c) in the height vs humidity and temperature are not robust to mean removal. Perhaps these effects are not as straight forward as 3(c) presents it.
+
+\paragraph{Figure 4} This figure plots the variables against the time-of-day for May 1, 2004 (one line per node), then plots the variable against height for 9:35AM. This demonstrates the consistency of our measurements across nodes for humidity and temperature, but reveals the extremely wide flucutations in PAR across time.  Thus, the PAR plots include a spatial averaging. This average is a measure of the total amount of light accessible for that tree. It is not clear why PAR is lower in the morning than the evening, perhaps this comes from foggy mornings. An anlysis across multiple days would be elucidating. It should also be noted that this averaging probably has the problem of being weighted towards more densely populated heights; how to generate a measure of the sunlight accessible by the tree should be considered.
+
+For the height snapshots, they did not include a key describing the pink vs blue points. However, these snapshots are clear otherwise. It is helpful to see raw data for height.
+
+\section{Findings}
+
+
+\subsection{First finding}
+
+My first finding is that the humidity and the total incident light are correlated. As could be expected, a very foggy day will have both high humidity and low light. What is most surprising about this finding is that the trend does not appear until we nearly saturate humidity. For the interior tree, there is much less of a trend.
+
+It should also be noted that there are few days with mean humidity less than 40\%. This coastal region is clearly very humid.
+
+<<humidity_top_light, echo=FALSE, fig.cap='Humidity vs Incident PAR for the edge tree, as averaged between 7AM and 5PM over the full tree. Blue dots label the interior tree and red label the exterior tree. There is a correlation between these variables, stronger in the edge tree than the interior tree.' >>=
+
+ggplot() +
+  geom_point( data = filter(log.merge.edge, 
+                            time.day < time.day.last & 
+                              time.dmin > 420 & 
+                              time.dmin < 1020) %>%
+                group_by(time.day) %>%
+                summarise(humidity=mean(humidity), 
+                          hamatop=mean(hamatop),
+                          hamabot=mean(hamabot)),
+              aes(x=humidity,y=hamatop, label='edge'), colour='red',label='edge') +
+  geom_point( data = filter(log.merge.interior, 
+                            time.day < time.day.last & 
+                              time.dmin > 420 & 
+                              time.dmin < 1020) %>%
+                group_by(time.day) %>%
+                summarise(humidity=mean(humidity), 
+                          hamatop=mean(hamatop),
+                          hamabot=mean(hamabot)),
+              aes(x=humidity,y=hamatop), colour='blue', label='interior') 
+@
+
+
+\section{Conclusion}
+I did not learn much about the redwood tree.
+
+\begin{thebibliography}{1}
+\bibitem{key-3}Tolle G. et al \textsl{A Macroscope in the Woods}.
+SenSys’05, San Diego, California, USA, November 2–4, 2005
+\end{thebibliography}
+
+\end{document}
