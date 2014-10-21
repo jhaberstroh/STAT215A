@@ -3,14 +3,17 @@ library('foreach')
 library('rlecuyer')
 library('Rcpp')
 library('microbenchmark')
+library('ggplot2')
 
-wd <- '/home/jhaberstroh/Courses/STAT215/REPO/Lab3'
+print("Loading data...")
+# Set directory of lingBinary.Rdata as wd and directory for ouput as save_dir
+wd <- "/home/jhaberstroh/Courses/STAT215/Lab3"
+save_dir <- "/home/jhaberstroh/Dropbox/Public"
 setwd(wd)
-load('lingBinary.RData')
+load(paste0(wd, '/', 'lingBinary.RData'))
+# Assuming shape ~(45k, 474) with non-answer columns stored as lingBinary.identifiers
 
 sourceCpp(file.path(wd, 'similarity.cpp'))
-# Loads object lingBinary
-# Assuming shape  ~(45k, 474) with non-answer columns stored as lingBinary.identifiers
 
 # Uncomment the following to check variable properties:
 #ls()
@@ -48,21 +51,16 @@ Jaccard.mtx <- function(data.1, data.2){
 #	cluster.k:		Number of clusters to use for cluster method
 #	similarity.method: 	Method taking two objects output from cluster.method, returning a double
 ClusterSubsample <- function(data, sub.fraction, cluster.method, cluster.k, similarity.method){
+        # Grab two subsamples and cluster them
 	sample.1 <- sort(sample(nrow(data), nrow(data) * sub.fraction, replace=FALSE))
 	sample.2 <- sort(sample(nrow(data), nrow(data) * sub.fraction, replace=FALSE))
 	cluster.1 <- cluster.method(data[sample.1,], cluster.k)
 	cluster.2 <- cluster.method(data[sample.2,], cluster.k)
 	
-	# Sorted and replace==FALSE, so indices will align after subsetting
+	# Select the overlap of the two samples to perform intersection
 	intersect.1 <- sample.1 %in% sample.2
 	intersect.2 <- sample.2 %in% sample.1
 
-	#print(head(intersect.1))
-	#print(length(cluster.1))
-	#print(length(intersect.1))
-	#print("Cluster intersection")
-	#print(head(cluster.1[intersect.1]))
-	#print(head(cluster.2[intersect.2]))
 	return(similarity.method(cluster.1[intersect.1], cluster.2[intersect.2]))
 }
 
@@ -92,21 +90,21 @@ SimilarityProfile <- function(data, sub.fraction, cluster.method, cluster.k, sim
 }
 
 
-#ClusterSubsample(lingBinary[,lingBinary.answers], .11, kMeansWrap, 5,
-#		 similarity.method = Jaccard.mtx)
-#ClusterSubsample(lingBinary[,lingBinary.answers], .8, kMeansWrap, 5,
-#		 similarity.method = JaccardCPP)
+## Perform the matrix version on ~5k entries
+#ClusterSubsample(lingBinary[,lingBinary.answers], .11, kMeansWrap, k, similarity.method = Jaccard.mtx)
 
-
-
-#SimilarityProfile(lingBinary[,lingBinary.answers], .11, kMeansWrap, 5,
-#		 similarity.method = JaccardCPP)
-
-registerDoParallel(cores=6)
+# Perform the optimized c++ version in parallel
+registerDoParallel(cores=8)
+n_jobs <- 500
 RNGkind("L'Ecuyer-CMRG")
-for (k in seq(2,3)){
-	sims <- foreach(i = 1:10) %dopar% ClusterSubsample(lingBinary[,lingBinary.answers], .8, kMeansWrap, k,
-		 					    similarity.method = JaccardCPP)
-	print(sims)
+for (k in seq(2,7)){
+    print(sprintf("Performing %d simulations with k=%d...", n_jobs, k))
+    sims <- foreach(i = 1:n_jobs) %dopar% ClusterSubsample(lingBinary[,lingBinary.answers], .8, kMeansWrap, k,
+    	 					    similarity.method = JaccardCPP)
+    sims <- unlist( lapply(sims[1:n_jobs], as.numeric) )
+    sims_df <- data.frame(sim_value=sims)
+    print(sims_df)
+    qplot(sim_value, data=sims_df, geom="histogram", xlim=c(0,1.01), binwidth=.01) +
+        ggsave(file=paste0(save_dir, "/", sprintf("STAT215-Lab3-k%d.pdf", k)))
 }
 
