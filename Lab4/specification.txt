@@ -11,3 +11,29 @@ Classifier_NAME() should return best estimate of parameters that minimize Cost_N
 
 
 
+================================
+Exploratory Data Analyses
+================================
+
+
+
+
+================================
+Classifiers
+================================
+   * Logistic
+   * SVM
+   * Linear Regression
+   * MLE
+   * "Machine Learning Toolkit"
+
+================================
+Validation routines
+================================
+   * Operating Characteristic (ROC)
+   * Convergence
+   * Cross Validataion / Bootstrap
+   * Trends in error / residuals
+
+
+
