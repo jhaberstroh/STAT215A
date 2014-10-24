@@ -8,3 +8,7 @@ Lab2/data
 *.RData
 .Rhistory
 figure
+Lab1
+Lab2
+Lab3
+*.DS_Store
