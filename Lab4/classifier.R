@@ -74,5 +74,28 @@ summary(mod1,parameters = TRUE)
 gaussian.mean <- mod1$parameters$mean
 gaussian.var <- mod1$parameters$variance$sigmasq
 
-gaussian <- function(mean, var)
-  return (1/sqrt(2*pi*var)*exp(-()))
+gaussian <- function(x, mean, var) {
+  return (1/sqrt(2*pi*var)*exp(-(x-mean)^2/var))
+}
+
+x = range(image.one$NDAI)
+x = seq(x[1], x[2], 0.0001)
+mix <- gaussian(x, gaussian.mean[1], gaussian.var[1]) + gaussian(x, gaussian.mean[2], gaussian.var[2]) 
+second.deriv <- diff(sign(diff(mix)))
+dip <- x[which.max(second.deriv)]
+
+## image.two
+mod2 = Mclust(image.two$NDAI, G = 2, modelNames = c("E", "V"))
+summary(mod2,parameters = TRUE)
+
+gaussian.mean <- mod2$parameters$mean
+gaussian.var <- mod2$parameters$variance$sigmasq
+
+x = range(image.two$NDAI)
+x = seq(x[1], x[2], 0.0001)
+mix <- gaussian(x, gaussian.mean[1], gaussian.var[1]) + gaussian(x, gaussian.mean[2], gaussian.var[2]) 
+second.deriv <- diff(sign(diff(mix)))
+dip <- x[which.max(second.deriv)]
+
+## QDA
+
