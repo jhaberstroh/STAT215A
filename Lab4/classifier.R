@@ -1,0 +1,66 @@
+library(dplyr)
+library(ggplot2)
+library('Rcpp')
+
+setwd(file.path(Sys.getenv("GIT_REPO_LOC"), "Users/cusgadmin/Documents/2014fall/STAT215/Lab/Lab4/image_data"))
+# Get the data for three images
+
+image.one <- read.table('image1.txt', header=F)
+image.two <- read.table('image2.txt', header=F)
+image.three <- read.table('image3.txt', header=F)
+
+# Add informative column names.
+collabs <- c('y','x','label','NDAI','SD','CORR','DF','CF','BF','AF','AN')
+names(image.one) <- collabs
+names(image.two) <- collabs
+names(image.three) <- collabs
+
+head(image.one)
+summary(image.one)
+
+head(image.two)
+head(image.three)
+
+
+# Class conditional densities.
+ggplot(image1) + geom_density(aes(x=SD, group=factor(label), fill=factor(label)), alpha=0.5) +
+  ggtitle('image1')
+
+ggplot(image.one) + geom_point(aes(x=x, y=y, color=AN))
+# The classification.
+ggplot(image.one) + geom_point(aes(x=x, y=y, color=factor(label)))
+# Class conditional densities.
+ggplot(image.one) + geom_density(aes(x=AN, group=factor(label), fill=factor(label)), alpha=0.5)
+ggplot(image.one) + geom_density(aes(x=CORR, group=factor(label), fill=factor(label)), alpha=0.5)
+ggplot(image.one) + geom_density(aes(x=NDAI, group=factor(label), fill=factor(label)), alpha=0.5)
+
+
+## Realization of Enhanced Linear Correlation Matching Algorithm
+# ELCM: setting threshold for features
+setwd(file.path(Sys.getenv("GIT_REPO_LOC"), "Users/cusgadmin/Documents/2014fall/STAT215/Lab/Lab4"))
+source('exploration_func.R')
+threshold.corr <- 0.75
+threshold.sd <- 2
+image.one.sample <- image.one[sample.int(nrow(image.one), 10000, replace=FALSE),]
+# Classify using cutoff on NDAI & SD first, leaving behind misclassified entries
+# initialize predicted label as 1
+image.one$label.pre <- 1
+image.one$label.pre[image.one$SD<threshold.sd | (image.one$CORR>threshold.corr & image.one$NDAI < 0.5)] <- -1
+
+
+class.error <- function(label.true, label.pre) {
+  return (sum(label.true[label.true != 0] != label.pre[label.true != 0])/length(label.true))
+}
+err <- class.error(image.one$label, image.one$label.pre)
+
+search.NDAI <- seq(0,1,0.00001)
+err.NDAI <- rep(0, length(search.NDAI))
+for (i in 1:length(search.NDAI)) {
+  image.one$label.pre <- 1
+  image.one$label.pre[image.one$SD<threshold.sd | (image.one$CORR>threshold.corr & image.one$NDAI < search.NDAI[i])] <- -1
+  err.NDAI[i] <- class.error(image.one$label, image.one$label.pre)
+  print(i)
+}
+
+
+ggplot(image.one, aes(x = NDAI)) + geom_histogram()
