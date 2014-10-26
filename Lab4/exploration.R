@@ -3,10 +3,12 @@ library(dplyr)
 
 wd <- "/Users/newuser/Courses/STAT215/Lab4"
 image.one = read.table(paste0(wd, "/", "data/image1.txt"), header=F)
-
+image.two = read.table(paste0(wd, "/", "data/image2.txt"), header=F)
 # Add informative column names.
 column.labels <- c('y','x','label','NDAI','SD','CORR','DF','CF','BF','AF','AN')
 names(image.one) <- column.labels
+names(image.two) <- column.labels
+
 
 source(paste0(wd,'/','exploration_func.R'))
 
@@ -15,8 +17,10 @@ summary(image.one)
 
 # The raw image (red band, from nadir).
 ggplot(image.one) + geom_point(aes(x=x, y=y, color=AN))
+ggplot(image.two) + geom_point(aes(x=x, y=y, color=AN))
 # The classification.
 ggplot(image.one) + geom_point(aes(x=x, y=y, color=factor(label)))
+ggplot(image.two) + geom_point(aes(x=x, y=y, color=factor(label)))
 # Class conditional densities.
 ggplot(image.one) + geom_density(aes(x=AN, group=factor(label), fill=factor(label)), alpha=0.5)
 
@@ -50,7 +54,7 @@ source(paste0(wd,'/','exploration_func.R'))
 image.one.sample <- image.one[sample.int(nrow(image.one), 10000, replace=FALSE),]
 # Classify using cutoff on NDAI & SD first, leaving behind misclassified entries
 image.one.mc1 <- filter(image.one, NDAI > 0 & (NDAI > 1.5| SD > 5) & label==-1)
-DoubleScatter(image.one.sample, image.one.mc1, 'NDAI', 'SD')
+SingleScatter(image.one.sample, 'CORR', 'SD')
 DoubleDensity(image.one.sample, image.one.mc1, 'AN')
 # Classify using AN second, leaving behind misclassified entries
 image.one.mc2 <- filter(image.one.mc1, AN < 200)
@@ -61,9 +65,14 @@ DoubleDensity(image.one.sample, image.one.mc2, 'AF')
 
 # -------------- EXPLORATION 2 -----------------
 # Begin with a high/low AN partition
+SingleDensity(image.one.sample, 'AN')
+SingleScatter(image.one.sample, 'NDAI', 'SD')
 image.one.AN.low <- filter(image.one, AN < 200)
 SingleScatter(image.one.AN.low, 'NDAI', 'SD')
 image.one.AN.high <- filter(image.one, AN > 200)
+SingleScatter(image.one.AN.high, 'NDAI', 'SD')
+group_by(image.one.AN.low, label) %>% summarise(n())
+group_by(image.one.AN.high, label) %>% summarise(n())
 # Notice the high AN partition is the same region of clusering in NDAI & SD
 SingleScatter(filter(image.one.AN.high, label == -1), 'NDAI', 'SD')
 SingleScatter(filter(image.one.AN.high, label != 0), 'NDAI', 'SD')
@@ -93,9 +102,3 @@ SingleScatter(filter(image.one.AN.low, label != 0), 'NDAI', 'CORR')
 
 
 
-x.width <- max(image.one$x) - min(image.one$x) + 1
-y.width <- max(image.one$y) - min(image.one$y) + 1
-
-coarse.size <- 5
-
-image.one.coarse <- coarsen(image.one, coarse.size)
