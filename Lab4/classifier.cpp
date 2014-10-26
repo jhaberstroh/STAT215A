@@ -35,6 +35,7 @@ float ClassificationError(Rcpp::NumericVector v, float v_thresh, bool v_lt,
 	std::vector<int> new_labels(v.size(),0);
 	
 	int err = 0;
+  int count = 0;
 	for (int i = 0 ; i < v.size() ; i++)
 		{
 			bool v_ok = lt_toggle( v[i],  v_thresh,  v_lt);
@@ -49,12 +50,16 @@ float ClassificationError(Rcpp::NumericVector v, float v_thresh, bool v_lt,
 				{
 					label_i = 1;
 				}
-			if (label_i != label[i])
-				{
-					err++;
-				}
+      if (label[i] != 0)
+		    {
+			    if (label_i != label[i])
+				    {
+					    err++;
+				    }
+          count++;
+		    }
 		}
-		return float(err) / float(v.size());
+		return float(err) / float(count);
 }
 
 // [[Rcpp::export]]
