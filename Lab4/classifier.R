@@ -64,3 +64,15 @@ for (i in 1:length(search.NDAI)) {
 
 
 ggplot(image.one, aes(x = NDAI)) + geom_histogram()
+
+
+library('mclust')
+
+mod1 = Mclust(image.one$NDAI, G = 2, modelNames = c("E", "V"))
+summary(mod1,parameters = TRUE)
+
+gaussian.mean <- mod1$parameters$mean
+gaussian.var <- mod1$parameters$variance$sigmasq
+
+gaussian <- function(mean, var)
+  return (1/sqrt(2*pi*var)*exp(-()))
