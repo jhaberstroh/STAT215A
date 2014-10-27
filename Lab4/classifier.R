@@ -49,7 +49,7 @@ image.one$label.pre[image.one$SD<threshold.sd | (image.one$CORR>threshold.corr &
 
 
 class.error <- function(label.true, label.pre) {
-  return (sum(label.true[label.true != 0] != label.pre[label.true != 0])/length(label.true))
+  return (sum(label.true[label.true != 0] != label.pre[label.true != 0])/sum(label.true != 0))
 }
 err <- class.error(image.one$label, image.one$label.pre)
 
@@ -67,13 +67,14 @@ ggplot(image.one, aes(x = NDAI)) + geom_histogram()
 
 
 library('mclust')
-
+## image.one
 mod1 = Mclust(image.one$NDAI, G = 2, modelNames = c("E", "V"))
 summary(mod1,parameters = TRUE)
 
 gaussian.mean <- mod1$parameters$mean
 gaussian.var <- mod1$parameters$variance$sigmasq
 
+## Generate Gaussian function
 gaussian <- function(x, mean, var) {
   return (1/sqrt(2*pi*var)*exp(-(x-mean)^2/var))
 }
@@ -97,8 +98,17 @@ mix <- gaussian(x, gaussian.mean[1], gaussian.var[1]) + gaussian(x, gaussian.mea
 second.deriv <- diff(sign(diff(mix)))
 dip <- x[which.max(second.deriv)]
 
+image.two$label.pre = 1
+image.two$label.pre[image.two$SD<threshold.sd | (image.two$CORR>threshold.corr & image.two$NDAI < dip )] <- -1
+err.two <- class.error(image.two$label, image.two$label.pre)
+
 ## QDA
 library("MASS")
-qda2 <- qda(label~SD+CORR+NDAI, data = image.two, CV = TRUE)
+qda2 <- qda(label.pre~SD+CORR+NDAI, data = image.two, CV = TRUE)
 image.two$nocloud.prob <- qda2$posterior[,1]
+image.two$label.pre.qda <- qda2$class
+err.two.qda <- class.error(image.two$label, image.two$label.pre.qda)
 ggplot(image.two) + geom_point(aes(x=x, y=y, color=label))
+ggplot(image.two) + geom_point(aes(x=x, y=y, color=nocloud.prob))
+ggplot(image.two) + geom_point(aes(x=x, y=y, color=label.pre.qda))
+ggplot(image.two) + geom_point(aes(x=x, y=y, color=label.pre))
