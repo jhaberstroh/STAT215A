@@ -98,4 +98,7 @@ second.deriv <- diff(sign(diff(mix)))
 dip <- x[which.max(second.deriv)]
 
 ## QDA
-
+library("MASS")
+qda2 <- qda(label~SD+CORR+NDAI, data = image.two, CV = TRUE)
+image.two$nocloud.prob <- qda2$posterior[,1]
+ggplot(image.two) + geom_point(aes(x=x, y=y, color=label))
