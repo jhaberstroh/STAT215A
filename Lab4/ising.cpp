@@ -36,3 +36,50 @@ Rcpp::NumericVector LearnJ(Rcpp::NumericVector x,
   }
   return 0;
 }
+
+
+// [[Rcpp::export]]
+Rcpp::NumericVector IsingPert(Rcpp::NumericVector x, 
+                           Rcpp::NumericVector y,
+                           Rcpp::NumericVector extent,
+                           Rcpp::NumericVector posteriorA,
+                           Rcpp::NumericVector posteriorB, 
+                           float lambda){
+  
+  assert(x.size() == y.size());
+  assert(y.size() == image_labels.size());
+  const int size_x = extent[1] - extent[0] + 1;
+  const int size_y = extent[3] - extent[2] + 1;
+  int x0 = extent[0];
+  int y0 = extent[2];
+  std::cout << "Size of grid: "<< size_x << " " << size_y << std::endl;
+  // Construct the grid of image_labels from the 1D data
+  std::vector<std::vector<int> > gridA0(size_y, std::vector<int>(size_x,-1));
+  std::vector<std::vector<int> > gridB0(size_y, std::vector<int>(size_x,-1));
+  std::vector<std::vector<int> > gridA1(size_y, std::vector<int>(size_x,-1));
+  std::vector<std::vector<int> > gridB1(size_y, std::vector<int>(size_x,-1));
+  for (int i = 0 ; i < x.size() ; i++)
+    {
+  	  int posy = y[i] - y0;
+		  int posx = x[i] - x0;
+      //std::cout << "i: " << i << " x, y: ";
+		  //std::cout << posy << ", ";
+      //std::cout << posx << std::endl;
+      gridA0[posy][posx] = posteriorA[i];
+      gridA1[posy][posx] = posteriorA[i];
+      gridB0[posy][posx] = posteriorB[i];
+      gridB1[posy][posx] = posteriorB[i];
+    }
+  
+  for (int i = 0 ; i < size_y ; i++)
+    {
+      for (int j = 0 ; j < size_x ; j++)
+        {
+          
+        }
+    }
+  
+  return 0;
+}
+
+

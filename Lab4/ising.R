@@ -1,12 +1,28 @@
-wd <- "/Users/newuser/Courses/STAT215/Lab4"
-image.one = read.table(paste0(wd, "/", "data/image1.txt"), header=F)
-# Add informative column names.
-column.labels <- c('y','x','label','NDAI','SD','CORR','DF','CF','BF','AF','AN')
-names(image.one) <- column.labels
+source('elcm_qda_classifier.R')
 
 
-library(Rcpp)
-sourceCpp(paste0(wd, "/", "ising.cpp"))
-image.one.extent <- c(min(image.one$x), max(image.one$x), min(image.one$y), max(image.one$y))
+CostIsingPostCorrELCM <- function(data, labels, parameters, lambda=.1)
+{
+  head(data)
+  head(data$SD)
+  thresh.predict <- data$SD   < parameters$thresh.SD | 
+    (data$CORR > parameters$thresh.CORR & 
+       data$NDAI < parameters$thresh.NDAI )
+  thresh.predict <- (thresh.predict * -2) + 1
+  
+  qda.predict <- qda(thresh.predict ~ SD + CORR + NDAI,
+                     data = data, CV = TRUE)
+  
+  correction.class <- IsingPert(data, qda.predict$posterior)
+  qda.predict.error <- correction.class != labels
+  qda.err <- mean(qda.predict.error[labels!=0])
+  
+  return(qda.err)
+}
 
-Jmtx <- LearnJ(image.one$x, image.one$y, image.one.extent, image.one$label)
+
+# 
+# library(Rcpp)
+# sourceCpp(paste0(wd, "/", "ising.cpp"))
+# image.one.extent <- c(min(image.one$x), max(image.one$x), min(image.one$y), max(image.one$y))
+# Jmtx <- LearnJ(image.one$x, image.one$y, image.one.extent, image.one$label)
