@@ -1,7 +1,8 @@
+library(ggplot2)
 source('elcm_qda_classifier.R')
+sourceCpp('ising.cpp')
 
-
-CostIsingPostCorrELCM <- function(data, labels, parameters, lambda=.1)
+CostIsingPostCorrELCM <- function(data, labels, parameters, lambda=.1, iterations=1)
 {
   head(data)
   head(data$SD)
@@ -13,11 +14,16 @@ CostIsingPostCorrELCM <- function(data, labels, parameters, lambda=.1)
   qda.predict <- qda(thresh.predict ~ SD + CORR + NDAI,
                      data = data, CV = TRUE)
   
-  correction.class <- IsingPert(data, qda.predict$posterior)
+  extent <- c(min(data$x), max(data$x), min(data$y), max(data$y))
+  correction.class <- IsingPert(data$x, data$y, extent,
+                                qda.predict$posterior[,-1], 
+                                qda.predict$posterior[,1],
+                                lambda, iterations)
+  qplot(data$x, data$y)
   qda.predict.error <- correction.class != labels
   qda.err <- mean(qda.predict.error[labels!=0])
   
-  return(qda.err)
+  return( qda.err,correction.class )
 }
 
 

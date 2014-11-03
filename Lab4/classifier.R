@@ -13,6 +13,7 @@ names(image.one) <- collabs
 params <- TrainELCMQDA(image.one, image.one$label)
 CostELCMQDA(image.one, image.one$label, params)
 
-PostCorrELCM(image.one, image.one$label, params, lambda=.1)
+source('ising.R')
+list[error, class] <- CostIsingPostCorrELCM(image.one, image.one$label, params, lambda=.3, iterations=20)
   
   
