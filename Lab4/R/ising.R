@@ -1,5 +1,3 @@
-library(ggplot2)
-source('elcm_qda_classifier.R')
 sourceCpp('ising.cpp')
 
 CostIsingPostCorrELCM <- function(data, labels, parameters, lambda=.1, iterations=1)
@@ -27,8 +25,3 @@ CostIsingPostCorrELCM <- function(data, labels, parameters, lambda=.1, iteration
 }
 
 
-# 
-# library(Rcpp)
-# sourceCpp(paste0(wd, "/", "ising.cpp"))
-# image.one.extent <- c(min(image.one$x), max(image.one$x), min(image.one$y), max(image.one$y))
-# Jmtx <- LearnJ(image.one$x, image.one$y, image.one.extent, image.one$label)
