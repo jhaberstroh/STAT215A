@@ -146,5 +146,72 @@ Rcpp::NumericVector CrfClassifier (int iterationNum, float beta,
    return label_pre;
 }
 
+// [[Rcpp::export]]
+Rcpp::NumericVector CrfClassifier_Posterior (int iterationNum, float beta, 
+                     Rcpp::NumericVector x, Rcpp::NumericVector y,
+                     Rcpp::NumericVector label,
+                     Rcpp::NumericVector label_temp, 
+                    Rcpp::NumericVector post_cloud) {
+   // Create NDIA matrix using geographical coordinates
+   int x_min;
+   x_min = *std::min_element(std::begin(x), std::end(x));
+   int x_max;
+   x_max = *std::max_element(std::begin(x), std::end(x));
+   int y_min;
+   y_min = *std::min_element(std::begin(y), std::end(y));
+   int y_max;
+   y_max = *std::max_element(std::begin(y), std::end(y));
+   Rcpp::NumericMatrix label_mat(y_max-y_min+1, x_max-x_min+1);
+   for (int i = 0; i < label_temp.size(); i ++)
+   {
+     label_mat(int(y[i])-y_min,int(x[i])-x_min) = label_temp[i];
+   }
+
+   float post_energy1, post_energy2;
+   Rcpp::NumericVector label_pre = label_temp;
+   for (int k = 0; k < iterationNum; k++)
+   {
+     for (int i = 0; i < label_temp.size(); i ++) 
+     {
+       // posterior enregy if the label is cloud
+       label_mat(int(y[i])-y_min, int(x[i])-x_min) = 1;                                   
+       post_energy1 = -log(post_cloud[i]) + 
+                      beta * CliquePotentialCpp(i, x, y, label_mat, 
+                                          x_min,x_max, y_min, y_max );
+       // posterior energy if no cloud
+       label_mat(int(y[i])-y_min, int(x[i])-x_min) = -1;
+       post_energy2 = -log(1-post_cloud[i]) + 
+                      beta * CliquePotentialCpp(i, x, y, label_mat, 
+                                          x_min,x_max, y_min, y_max );
+
+       if (post_energy1 < post_energy2)
+       {
+         label_pre[i] = 1;
+               // std::cout << "hi" << std::endl;
+       }
+       else
+       {
+         label_pre[i] = -1;
+       }
+       label_mat(int(y[i])-y_min, int(x[i])-x_min) = label_pre[i];
+         
+     }
+   }
+
+   
+   double count = 0;
+   for (int i = 0; i < label.size(); i ++) 
+   {
+     if ((label[i] != 0) && (label[i] != label_pre[i]))
+     {
+       count += 1;
+     }
+   }
+   float err;
+   err = count/label.size();
+   std::cout << err << std::endl;
+   return label_pre;
+}
+
 
                             
