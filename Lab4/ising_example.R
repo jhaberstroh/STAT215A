@@ -3,7 +3,7 @@ library(ggplot2)
 source('elcm_qda_classifier.R')
 source('ising.R')
 
-setwd(file.path(Sys.getenv("GIT_REPO_LOC"), "Users/cusgadmin/Documents/2014fall/STAT215/Lab/Lab4/image_data"))
+#setwd(file.path("/Users/cusgadmin/Documents/2014fall/STAT215/Lab/Lab4/image_data"))
 # Get the data for three images
 
 # New classifier code:
@@ -14,6 +14,4 @@ params <- TrainELCMQDA(image.one, image.one$label)
 CostELCMQDA(image.one, image.one$label, params)
 
 source('ising.R')
-list[error, class] <- CostIsingPostCorrELCM(image.one, image.one$label, params, lambda=.3, iterations=20)
-  
-  
+class <- CostIsingPostCorrELCM(image.one, image.one$label, params, lambda=.3, iterations=20)

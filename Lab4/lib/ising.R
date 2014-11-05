@@ -23,7 +23,7 @@ CostIsingPostCorrELCM <- function(data, labels, parameters, lambda=.1, iteration
   qda.predict.error <- correction.class != labels
   qda.err <- mean(qda.predict.error[labels!=0])
   
-  return( qda.err,correction.class )
+  return( correction.class )
 }
 
 
