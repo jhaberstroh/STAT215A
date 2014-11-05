@@ -1,0 +1,12 @@
+#!/bin/bash
+
+
+if [ -z $1 ]; then
+	echo "USAGE: ./configure /path/to/image#.txt/file"
+	exit
+fi
+
+echo "config:" > cfg.yml
+echo "  dir: $(pwd)" >> cfg.yml
+echo "  data: $1" >> cfg.yml
+echo "  libdir: $(pwd)/lib" >> cfg.yml
