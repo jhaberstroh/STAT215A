@@ -7,6 +7,14 @@ Setup:
       1. dir - Absolute path to the directory containing lab4. Scripts have access to dir/R/.
       2. data - Absolute path to the directory containing image{1..3}.txt. Example scripts
             will not try to access files with any different numbers.
+   REQUIRED LIBRARIES:
+      yaml
+      optparse
+      dplyr
+      reshape2
+      ggplot2
+      MASS
+      Rcpp
 
 Example Scripts:
    Running example scripts:
