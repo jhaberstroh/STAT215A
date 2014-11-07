@@ -1,0 +1,19 @@
+!!!LUCKY NUMBER 7!!!
+-----
+
+Setup:
+   Edit a configuration file in the style of cfg_example.yml. The necessary variables
+   to set are:
+      1. dir - Absolute path to the directory containing lab4. Scripts have access to dir/R/.
+      2. data - Absolute path to the directory containing image{1..3}.txt. Example scripts
+            will not try to access files with any different numbers.
+
+Example Scripts:
+   Running example scripts:
+      To run an example script, manually supply the variable args$config to point to the
+      appropriate .yml file, or else run the script with the (-c) argument to set the 
+      args$config variable at runtime.
+   Use any of the example scripts:
+      1. elcm_example.R - ???
+      2. crf_example.R - ???
+      3. ising_example.R - ???
