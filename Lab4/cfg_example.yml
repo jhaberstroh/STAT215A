@@ -1,0 +1,3 @@
+config:
+  dir: /path/to/lab4
+  data: /path/to/data/containing/image#.txt/
