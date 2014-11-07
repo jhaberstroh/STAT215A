@@ -1,21 +1,18 @@
+library(optparse)
+
+option_list <- list(make_option(c("-c","--config"), default="cfg.yml", help="Location of .yml configuration file"))
+parser <- OptionParser(usage = "Hello", option_list = option_list)
+args = parse_args(parser)
+print(args$config)
+
 library(dplyr)
 library(ggplot2)
-library(Rcpp)
+library(yaml)
+yaml <- yaml.load_file(args$config)
+print(yaml$config$dir)
+print(yaml$config$dir)
 
-sourceCpp('classifier.cpp')
-FindMinNDAI <- function(image, search.NDAI, threshold.corr, threshold.sd)
-{
-  err.NDAI <- rep(0, length(search.NDAI))
-  for (i in 1:length(search.NDAI)) {
-    err.NDAI[i] <- ClassificationError(image$SD, threshold.sd, TRUE,
-                                       image$CORR, threshold.corr, FALSE,
-                                       image$NDAI, search.NDAI[i], TRUE,
-                                       image$label)  
-  }
-  plot(search.NDAI, err.NDAI)
-  return(search.NDAI[which.min(err.NDAI)])
-}
-
+source(paste0(yaml$config$dir,'/R/','elcm_qda_classifier.R'))
 
 image.one <- read.table('data/image1.txt', header=F)
 collabs <- c('y','x','label','NDAI','SD','CORR','DF','CF','BF','AF','AN')
