@@ -1,5 +1,19 @@
 library(ggplot2)
 library(dplyr)
+library(optparse)
+
+option_list <- list(make_option(c("-c","--config"), default="cfg.yml", help="Location of .yml configuration file"))
+parser <- OptionParser(usage = "Hello", option_list = option_list)
+args = parse_args(parser)
+print(args$config)
+
+library(dplyr)
+library(ggplot2)
+library(yaml)
+yaml <- yaml.load_file(args$config)
+print(yaml$config$dir)
+print(yaml$config$dir)
+
 
 wd <- "/Users/newuser/Courses/STAT215/Lab4"
 image.one = read.table(paste0(wd, "/", "data/image1.txt"), header=F)
