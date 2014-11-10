@@ -1,4 +1,3 @@
-library(rcpp)
 
 SingleDensity <- function(data1, x.string){
   ggplot() + 
