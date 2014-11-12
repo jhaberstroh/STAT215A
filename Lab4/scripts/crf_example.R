@@ -1,27 +1,43 @@
-library(optparse)
+#------------------ BEGIN HEADER -----------------------
+#------------------ BEGIN HEADER -----------------------
+#------------------ BEGIN HEADER -----------------------
 
+library(ggplot2)
+library(dplyr)
+library(optparse)
+library(yaml)
+library(lattice)
+
+# Set true if running interactively to allow specification of args$config by hand.
+interactive = FALSE 
+
+# Read the command arguments to find the configuration file.
 option_list <- list(make_option(c("-c","--config"), default="cfg.yml", help="Location of .yml configuration file"))
 parser <- OptionParser(usage = "Hello", option_list = option_list)
 args = parse_args(parser)
-print(args$config)
+if (interactive) {
+  args$config <- 'config.yml'  
+}
 
-library(dplyr)
-library(ggplot2)
-
-
-
-=======
-library(yaml)
+# Load the yaml configuration file.
 yaml <- yaml.load_file(args$config)
-print(yaml$config$dir)
-print(yaml$config$dir)
+print(paste("Project directory:",yaml$config$dir))
 
+# Source our helper functions for this script.
 setwd(paste0(yaml$config$dir,'/R/'))
 source(paste0(yaml$config$dir,'/R/','elcm_qda_classifier.R'))
 source(paste0(yaml$config$dir,'/R/','crf_classifier.R'))
 source(paste0(yaml$config$dir,'/R/','multiplot.R'))
 
+# Create a lambda to stitch together the path and extension matching 
+# this script's configuration with only the 'filename' specified.
+figname <- function(filename){
+  return (paste0(yaml$config$dir,'/figures/',filename,'.png'))
+}
 
+#------------------  END  HEADER -----------------------
+#------------------  END  HEADER -----------------------
+#------------------  END  HEADER -----------------------
 
 # Get the data for three images
 

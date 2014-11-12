@@ -47,7 +47,7 @@ TrainELCMQDA <- function(data, labels, baseline_param=NULL, threshold.sd=2, thre
   second.deriv.sign <- diff(sign(diff(ndai.mixture.sampled)))
   min.index <- which(second.deriv.sign == 2)
   # Use the EM result if we found a minimum index!
-  if (min.index != 0)
+  if (length(min.index) > 0)
   {
     # We must add one to account for numerical differentiation
     parameters$thresh.NDAI <- ndai.points.sampled[min.index + 1]
