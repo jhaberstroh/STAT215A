@@ -1,21 +1,21 @@
 library(dplyr)
+source("crf_classifier.R")
+source("crf_classifier_cv.R")
+source("elcm_qda_classifier.R")
 
 ##k-fold cross-validation on a binary classifier
-##'classifier' denotes the function of a classifier that
-##we apply the cross-validation
-CVfold <- function (dt, fold, classifier){
+#Print the error rate on the screen.
+CVfold <- function (dt, fold){
   #Break the data
   dt$fold = cut(1:nrow(dt), breaks=fold, labels=F)
   cl.accuracies = c()
   
   #Compute the accuracies of prediction for each choice of fold
   for(i in 1:fold){
-    #m.cl = classifier1(dt[dt$fold != i, c(3:11)], args..)
-    predictions = predict(m.cl, dt[dt$fold == i, c(3:11)])   
-    numcorrect = sum(predictions == dt[dt$fold ==i,]$label)
-    cl.accuracies = append(numcorrect / nrow(dt[dt$fold == i,]), cl.accuracies)
+    label.pre <- as.numeric(crf_classifier_cv(dt[dt$fold != i,],dt[dt$fold == i,],5,0.5))
+    #numcorrect = sum(label.pre == dt[dt$fold ==i,]$label)
+    #cl.accuracies = append(numcorrect / nrow(dt[dt$fold == i,]), cl.accuracies)
   }
-  return (cl.accuracies)
 }
 
 ## Functions to compute ROC and AUC
@@ -59,7 +59,7 @@ CalculateFPR <- function(thresh, preds, truth) {
 }
 
 # Show summary statistics, ROC curve, and AUC for model
-EvaluateModel <- function(fitted.model, preds, truth) {
+EvaluateModel <- function(preds, truth) {
   # Print an ROC curve and return the AUC for a fitted model.
   # Args:
   #  fitted.model: A model from a call to glm() that can be used with
@@ -81,22 +81,16 @@ EvaluateModel <- function(fitted.model, preds, truth) {
       geom_abline(aes(slope=1, intercept=0))
   )
   
-  # Calculate the AUC two different ways
+  # Calculate the AUC
   positive.classifications <-
     sapply(preds[!truth],
            FUN = function(threshold) { CalculateFPR(threshold, preds, !truth) })
   negative.auc <- sum(positive.classifications) / sum(!truth)
   cat("AUC based on negative examples: ", negative.auc, "\n")
   
-  negative.classifications <-
-    sapply(preds[truth],
-           FUN = function(threshold) { CalculateFPR(threshold, preds, truth) })
-  positive.auc <- sum(1 - negative.classifications) / sum(truth)
-  cat("AUC based on positive examples: ", positive.auc ,"\n")
-  
   return(positive.auc)
 }
-logit.auc <- EvaluateModel(logit.model,  logit.model.preds, logit.model.truth)
+
 
 
 
