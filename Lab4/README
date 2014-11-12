@@ -11,6 +11,8 @@ REQUIRED LIBRARIES:
    lattice
    MASS
    Rcpp
+   flemix
+   FNN
 
 To run:
    Use the command:
