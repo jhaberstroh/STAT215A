@@ -1,5 +1,6 @@
 library(dplyr)
 library(ggplot2)
+library(Rcpp)
 sourceCpp('crf_classifier_cpp.cpp')
 source('elcm_qda_classifier.R')
  

@@ -45,9 +45,9 @@ figname <- function(filename){
 
 
 # Get the data for three images
-image1 = read.table('image1.txt',header=F)
-image2 = read.table('image2.txt',header=F)
-image3 = read.table('image3.txt',header=F)
+image1 = read.table(paste0(yaml$config$data,'/image1.txt'),header=F)
+image2 = read.table(paste0(yaml$config$data,'/image2.txt'),header=F)
+image3 = read.table(paste0(yaml$config$data,'/image3.txt'),header=F)
 
 # Test
 collabs <- c('y','x','label','NDAI','SD','CORR','DF','CF','BF','AF','AN')

@@ -39,7 +39,7 @@ TrainELCMQDA <- function(data, labels, baseline_param=NULL, threshold.sd=2, thre
   ndai.mixture = Mclust(data$NDAI, G = 2, modelNames = c("E", "V"))
   ndai.mixture.mean <- ndai.mixture$parameters$mean
   ndai.mixture.var <- ndai.mixture$parameters$variance$sigmasq
-  ndai.range = range(image.one$NDAI)
+  ndai.range = range(data$NDAI)
   ndai.points.sampled = seq(ndai.range[1], ndai.range[2], 0.0001)
   NormalDist <- function(x,mean,var) (1/sqrt(2*pi*var)*exp(-(x-mean)^2/var))
   ndai.mixture.sampled <- NormalDist(ndai.points.sampled, ndai.mixture.mean[1], ndai.mixture.var[1]) + 
