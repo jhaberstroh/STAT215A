@@ -3,6 +3,7 @@ library(dplyr)
 library(optparse)
 library(yaml)
 library(lattice)
+
 # Set true if running interactively to allow specification of args$config by hand.
 interactive = FALSE 
 
@@ -25,7 +26,7 @@ source(paste0(yaml$config$dir,'/R/exploration_func.R'))
 # Create a lambda to stitch together the path and extension matching 
 # this script's configuration with only the 'filename' specified.
 figname <- function(filename){
-  return (paste0(yaml$config$figure,'/',filename,'.png'))
+  return (paste0(yaml$config$dir,'/figures/',filename,'.png'))
 }
 
 # Read the datasets image1.txt and image2.txt.
@@ -45,8 +46,8 @@ image.one.AN.sample <-
 # -------------- Scatterplot matrices -----------------
 # Create the full scatterplot matrix
 png(figname('splom'), width=15, height=12,units="in", res=300)
-trellis.par.set("superpose.line",png_pars.lines12) # set line colors & types in png 
-trellis.par.set("superpose.symbol",png_pars.symbols12) # set symbol types & colors in png
+# trellis.par.set("superpose.line",png_pars.lines12) # set line colors & types in png 
+# trellis.par.set("superpose.symbol",png_pars.symbols12) # set symbol types & colors in png
 super.sym <- trellis.par.get("superpose.symbol")
 splom(~image.one.sample[4:11], 
       data = filter(image.one.sample, label != 0),
@@ -62,8 +63,6 @@ dev.off() # turn off png device,
 
 # Create the filtered scatterplot matrix
 png(figname('splom_ANhigh'), width=15, height=12,units="in", res=300)
-trellis.par.set("superpose.line",png_pars.lines12) # set line colors & types in png 
-trellis.par.set("superpose.symbol",png_pars.symbols12) # set symbol types & colors in png
 super.sym <- trellis.par.get("superpose.symbol")
 splom(~image.one.sample[4:6], 
       data = filter(image.one.AN.sample, label != 0),
@@ -105,9 +104,9 @@ SingleDensity(image.one.sample, 'NDAI',
 # -------------- Classifications -----------------
 # The classification.
 ggplot(image.one) + geom_point(aes(x=x, y=y, color=factor(label))) +
-  ggsave(filename= figname('labels1'))
+  ggsave(filename= figname('labels1'), width=size[1], height=size[2])
 ggplot(image.two) + geom_point(aes(x=x, y=y, color=factor(label))) + 
-  ggsave(filename= figname('labels2'))
+  ggsave(filename= figname('labels2'), width=size[1], height=size[2])
 
 
 
