@@ -6,7 +6,7 @@ library(ggplot2)
 sourceCpp('crf_classifier_cpp.cpp')
 source('elcm_qda_classifier.R')
 
-crf_classifier_cv <- function(image.train, image, iterationNum) {
+crf_classifier_cv <- function(image.train, image, iterationNum, beta) {
   params <- TrainELCMQDA(image.train, image.train$label)
   thresh.predict <- image$SD < params$thresh.SD | 
     (image$CORR > params$thresh.CORR & 
@@ -27,5 +27,5 @@ crf_classifier_cv <- function(image.train, image, iterationNum) {
                                                 image$label,
                                                 image$label.temp, image$posterior.cloud)
   
-  return (image$label.pre, beta)
+  return (image$label.pre)
 }
