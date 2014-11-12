@@ -386,14 +386,54 @@ result to be converged.
   \label{fig:ICRFCS}
 \end{figure}
 
-The cloud dection result using ICRFCS is shown in Fig. ~\ref{fig:ICRFCS}. The 
+The cloud detection result using ICRFCS is shown in Fig. ~\ref{fig:ICRFCS}. The 
 accuracy of cloud detection for three images are $96.41\%, 95.42\%, 92.24\%$, 
 respectively, which are higher than ELCM-QDA algorithm presented in original 
 paper.
 
 \subsection{Model Assessment}
+\subsubsection{Cross Validation}
+We use 5 folds cross validation to assess our classification method. We splitted the image data into 5 folds by going through it from the first row to the last one. Some of the error rates are over 10\%. We think this can be improved by choosing folds more carefully so that ICRFCS take into account the spatial correlation of the pixels. The R code will generate the error rates below on the screen.
 
+\begin{center}
+ \begin{tabular}{||c c c||} 
+ \hline
+ Image1 & Image2 & Image3 \\ [0.5ex] 
+ \hline\hline
+ 3.6\% & 3.3\% & 5.5\% \\ 
+ \hline
+ 9.1\% & 0.2\% & 7.3\% \\
+ \hline
+ 3.6\% & 0.4\% & 13.3\% \\
+ \hline
+ 0.3\% & 9.0\% & 3.1\% \\
+ \hline
+ 0.6\% & 9.0\% & 11.3\% \\ [1ex] 
+ \hline
+\end{tabular}
+\end{center}
 
+\subsubsection{ROC curve and AUC values}
+The following figures show ROC curves when applying ICRFCS on the three images. AUC rates are provided in the following table.
+\begin{figure}[!h]
+  \begin{center}
+    \includegraphics[width=\columnwidth]{figures/ROC_image1.png} & 
+    \includegraphics[width=\columnwidth]{figures/ROC_image2.png} &
+    \includegraphics[width=\columnwidth]{figures/ROC_image3.png} \\
+  \end{center}
+  \caption{ROC}
+  \label{fig:ROC}
+\end{figure}
+
+\begin{center}
+ \begin{tabular}{||c c c||} 
+ \hline
+ Image1 & Image2 & Image3 \\ [0.5ex] 
+ \hline\hline
+ 0.901\% & 0.884\% & 0.739\% \\ [1ex] 
+ \hline
+\end{tabular}
+\end{center}
 
 \begin{thebibliography}{9}
 
