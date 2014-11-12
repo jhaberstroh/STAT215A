@@ -8,7 +8,7 @@ library(optparse)
 library(yaml)
 library(lattice)
 library(MASS)
-library('FNN')
+library(FNN)
 library('flexmix')
 library('reshape')
 
