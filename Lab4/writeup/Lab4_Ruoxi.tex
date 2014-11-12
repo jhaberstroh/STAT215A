@@ -68,6 +68,8 @@
 \setlength{\parindent}{0pt}
 \usepackage{amsthm}
 \usepackage{amsmath}
+% \usepackage{graphicx}
+% \usepacakge{subfig}
 
 \makeatletter
 
@@ -98,6 +100,98 @@ Stat 215A, Fall 2014}
 In this Lab, our mission is to predict cloud in the polar regions using a group of selected features. Firstly, we carry out EDA to explore feature distribution and their potential correlations. Then based on EDA observation, three features are selected as discriminators of cloud detection. Secondly, variety of  statistical and non-probabilistic models are fitted to the data and compared with each other with both visual and quantitative methods. Finally, we try to diagnose fitted models and explore error patterns for possible model improvement.
 
 \section{EDA}
+The dataset for cloud identification is not so multidimensional as to require use of tremendous dimensionality reduction. Rather, we can identify, within each feature, characteristics that permit greater precision and generality of our results.
+
+\subsection{Probability mass by category}
+The most direct exploration of the data involves an exploration of the 1-D 
+features and the distribution of categories within. The most useful density 
+plots in our data set are demonstrated in Fig.??. 
+
+
+\begin{figure}[!h]
+\begin{tabular}{cc}
+  \includegraphics[width=80mm]{../figures/density-AN.png} &
+  \includegraphics[width=80mm]{../figures/density-SD.png}  \\
+  \includegraphics[width=80mm]{../figures/density-NDAI.png} &
+  \includegraphics[width=80mm]{../figures/density-CORR.png}  \\
+\end{tabular}
+\caption{Plots of density, normalized within each category. Ideal features will 
+	distinguish the ratio of the likelihood of the ratio of these probabilities, as in 
+	a likelihood ratio test. Each of these features possess regions containing 
+	notable likelihood ratios for significant amounts of probability mass.}
+\end{figure}
+
+NDAI, SD, and CORR have regions with substantial likelihood ratios. Such a 
+feature is a good marker for categorization. The bulk of each probability mass 
+can be confined to a region of high likelihood by simple threshholding: thus, 
+what remains to be seen is whether the probability mass in "questionable" 
+regimes can be categorized similarly easily.
+
+\subsection{Scatter Plot Matrix}
+The scatter plot matrix for our dataset reveals very strong correlation between
+a subset of our elements, yet very little predictive power in this family. This is
+the AF, BF, CF, DF, and AN family of data. These features, unfortunately, do
+little to shed insight on our categories, and can essentially be boiled down to
+one collective variable. There may be a slightly informative subspace within a
+linear combination of the variables, but it is far weaker than that of remaining
+variables NDAI, SD, and CORR.
+
+\begin{figure}[!h]
+  \begin{center}
+    \includegraphics[width=\columnwidth]{../figures/splom.png}
+  \end{center}
+  \caption{Scatter plot matrix shows a highly correlated subspace in the upper 
+	right, with several complexly correlated and significantly uncorrelated
+	variables on the lower left. By inspection, there could be remaining 
+	information in some linear combination of the upper right block (i.e. 
+	(NDAI, SD, CORR) x (DF, CF, BF, AF, AN)), but none of the correlated 
+	block variables are particularly informative on their own.}
+  \label{fig:PT}
+\end{figure}
+
+\begin{figure}[!h]
+  \begin{center}
+    \includegraphics[width=\columnwidth]{../figures/splom_ANhigh.png}
+  \end{center}
+  \caption{The remaining complexity in this subspace dmonstrates that filtering 
+	by AN does not inform our challenging decisions.}
+  \label{fig:PT}
+\end{figure}
+
+The scatter plot matrix is demonstrated in Fig. ??. It seems like there could be 
+important data contributed by the upper-right block to the lower right block. 
+However, when we filter on AN, we are left with an "obvious group" -- all low 
+AN are easy to categorize, and when we filter on high AN, we are left with the 
+original complicated problem of separating NDAI, SD, and CORR, as seen in 
+Fig. ??. Thus, we are justified in looking only within the three-feature space of
+NDAI, SD, and CORR. This has the additional benefit of making the 
+categorization model simpler and more interpretable.
+
+\subsection{Spatial structure}
+While we have been currently focusing on pixel-by-pixel categorization, we are
+fortunately given additional informative information by virtue of the fact that our
+data is taken from spatially correlated variables. Including this spatial data is
+crucial: the simple observation that in the expert labels, no cloud label touches
+a snow label should indicate the potential efficacy of the inclusion of spatial
+information. However, this fortunate observation leads to a wealth of complexity
+with regards to how to actually include this spatial data.
+
+
+\begin{figure}[!h]
+\begin{tabular}{cc}
+  \includegraphics[width=80mm]{../figures/labels1.png} &
+  \includegraphics[width=80mm]{../figures/labels2.png}  \\
+  (a) image1.txt labels & (b) image2.txt labels
+\end{tabular}
+\caption{Expert labels for images show strong spatial structure that can be 
+	leveraged for better predictions.}
+\end{figure}
+
+
+A potential route could be to regress each pixel on all of its own data, as well as
+on all of its neighbor's data. Another route could be to correct each pixel based
+on its neighbor's prior distributions. Our methods will be explored further in our
+Modeling section.
 
 
 \section{Modeling}
