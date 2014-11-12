@@ -1,12 +1,10 @@
-setwd(file.path(Sys.getenv("GIT_REPO_LOC"), "Users/cusgadmin/Documents/2014fall/STAT215/Lab/Lab4_repo/Lab4"))
-
 
 library(dplyr)
 library(ggplot2)
 sourceCpp('crf_classifier_cpp.cpp')
 source('elcm_qda_classifier.R')
  
-crf_classifier <- function(image, iterationNum) {
+crf_classifier <- function(image, iterationNum, beta) {
   params <- TrainELCMQDA(image, image$label)
   thresh.predict <- image$SD < params$thresh.SD | 
     (image$CORR > params$thresh.CORR & 
