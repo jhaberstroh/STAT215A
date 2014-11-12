@@ -1,1 +1,7 @@
 data
+cfg.yml
+*.png
+*.DS_Store
+*.aux
+image*.txt
+*.pdf
