@@ -38,7 +38,7 @@ GenerateROC <- function(preds, truth){
       prev.score <- dt$preds[i]
     }
     if(dt$truth[i]){
-      cat("Truth label at i :",i, "\n")
+      #cat("Truth label at i :",i, "\n")
       true.positive <- true.positive + 1
     }else{
       false.positive <- false.positive + 1
