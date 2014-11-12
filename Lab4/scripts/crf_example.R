@@ -7,7 +7,7 @@ print(args$config)
 
 library(dplyr)
 library(ggplot2)
-<<<<<<< HEAD:Lab4/classifier.R
+
 
 
 =======
@@ -16,26 +16,28 @@ yaml <- yaml.load_file(args$config)
 print(yaml$config$dir)
 print(yaml$config$dir)
 
+setwd(paste0(yaml$config$dir,'/R/'))
 source(paste0(yaml$config$dir,'/R/','elcm_qda_classifier.R'))
 source(paste0(yaml$config$dir,'/R/','crf_classifier.R'))
->>>>>>> d94d2e3a9c86447794c2ff202cb06480383d799a:Lab4/scripts/crf_example.R
+source(paste0(yaml$config$dir,'/R/','multiplot.R'))
 
-setwd(file.path(Sys.getenv("GIT_REPO_LOC"), "Users/cusgadmin/Documents/2014fall/STAT215/Lab/Lab4_repo/Lab4"))
-source('elcm_qda_classifier.R')
-source('multiplot.R')
-source('crf_classifier.R')
 
 
 # Get the data for three images
 
 # New classifier code:
-image.one <- read.table('image1.txt', header=F)
-image.three <- read.table('image3.txt', header=F)
-image.two <- read.table('image2.txt', header=F)
+image.one = read.table(paste0(yaml$config$data, "/image1.txt"), header=F)
+image.two = read.table(paste0(yaml$config$data, "/image2.txt"), header=F)
+image.three = read.table(paste0(yaml$config$data, "/image3.txt"), header=F)
+
+
 collabs <- c('y','x','label','NDAI','SD','CORR','DF','CF','BF','AF','AN')
 names(image.one) <- collabs
 names(image.two) <- collabs
 names(image.three) <- collabs
+
+# Generate result from ELCMQDA for comparison
+
 params <- TrainELCMQDA(image.one, image.one$label)
 image.one$label.pre <- CostELCMQDA(image.one, image.one$label, params)
 p1<-ggplot(image.one) + geom_point(aes(x=x, y=y, color=factor(label.pre))) +
@@ -61,10 +63,18 @@ p5<-ggplot(image.three) + geom_point(aes(x=x, y=y, color=factor(label.pre))) +
 p6<-ggplot(image.three) + geom_point(aes(x=x, y=y, color=factor(label))) +
   ggtitle('True labels for image3')
 
+png(figname('ELCMQDA'), width=15, height=12,units="in", res=300)
+# trellis.par.set("superpose.line",png_pars.lines12) # set line colors & types in png 
+# trellis.par.set("superpose.symbol",png_pars.symbols12) # set symbol types & colors in png
+
 multiplot(p1, p3, p5, p2, p4, p6, cols = 2)
+
+dev.off() # turn off png device,
+
 
 
 ## conditional random field
+
 
 
 image.one$label.pre <- as.numeric(crf_classifier(image.one,5, 0.2))
@@ -88,4 +98,12 @@ p5<-ggplot(image.three) + geom_point(aes(x=x, y=y, color=factor(label.pre))) +
 p6<-ggplot(image.three) + geom_point(aes(x=x, y=y, color=factor(label))) +
   ggtitle('True labels for image3')
 
+png(figname('CRF'), width=15, height=12,units="in", res=300)
+# trellis.par.set("superpose.line",png_pars.lines12) # set line colors & types in png 
+# trellis.par.set("superpose.symbol",png_pars.symbols12) # set symbol types & colors in png
+
 multiplot(p1, p3, p5, p2, p4, p6, cols = 2)
+
+dev.off() # turn off png device,
+
+
