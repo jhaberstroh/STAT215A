@@ -97,17 +97,21 @@ Stat 215A, Fall 2014}
 
 \maketitle
 \section{Introduction}
-In this Lab, our mission is to predict cloud in the polar regions using a group of selected features. Firstly, we carry out EDA to explore feature distribution and their potential correlations. Then based on EDA observation, three features are selected as discriminators of cloud detection. Secondly, variety of  statistical and non-probabilistic models are fitted to the data and compared with each other with both visual and quantitative methods. Finally, we try to diagnose fitted models and explore error patterns for possible model improvement.
+In this Lab, our mission is to predict cloud in the polar regions using a group 
+of selected features. Firstly, we carry out EDA to explore feature distribution 
+and their potential correlations. Then based on EDA observation, three 
+features are selected as discriminators of cloud detection. Secondly, variety 
+of  statistical and non-probabilistic models are fitted to the data and compared 
+with each other with both visual and quantitative methods. Finally, we try to 
+diagnose fitted models and explore error patterns for possible model improvement.
 
 \section{EDA}
-The dataset for cloud identification is not so multidimensional as to require use of tremendous dimensionality reduction. Rather, we can identify, within each feature, characteristics that permit greater precision and generality of our results.
+The dataset for cloud identification is not so multidimensional as to require 
+use of tremendous dimensionality reduction. Rather, we can identify, within 
+each feature, characteristics that permit greater precision and generality 
+of our results.
 
 \subsection{Probability mass by category}
-The most direct exploration of the data involves an exploration of the 1-D 
-features and the distribution of categories within. The most useful density 
-plots in our data set are demonstrated in Fig.??. 
-
-
 \begin{figure}[!h]
 \begin{tabular}{cc}
   \includegraphics[width=80mm]{../figures/density-AN.png} &
@@ -119,7 +123,13 @@ plots in our data set are demonstrated in Fig.??.
 	distinguish the ratio of the likelihood of the ratio of these probabilities, as in 
 	a likelihood ratio test. Each of these features possess regions containing 
 	notable likelihood ratios for significant amounts of probability mass.}
+\label{fig:EDAdensity}
 \end{figure}
+
+The most direct exploration of the data involves an exploration of the 1-D 
+features and the distribution of categories within. The most useful density 
+plots in our data set are demonstrated in Fig ~\ref{fig:EDAdensity}.
+
 
 NDAI, SD, and CORR have regions with substantial likelihood ratios. Such a 
 feature is a good marker for categorization. The bulk of each probability mass 
@@ -146,7 +156,7 @@ variables NDAI, SD, and CORR.
 	information in some linear combination of the upper right block (i.e. 
 	(NDAI, SD, CORR) x (DF, CF, BF, AF, AN)), but none of the correlated 
 	block variables are particularly informative on their own.}
-  \label{fig:PT}
+  \label{fig:EDAsplom}
 \end{figure}
 
 \begin{figure}[!h]
@@ -155,17 +165,17 @@ variables NDAI, SD, and CORR.
   \end{center}
   \caption{The remaining complexity in this subspace dmonstrates that filtering 
 	by AN does not inform our challenging decisions.}
-  \label{fig:PT}
+  \label{fig:EDAsplomANhigh}
 \end{figure}
 
-The scatter plot matrix is demonstrated in Fig. ??. It seems like there could be 
-important data contributed by the upper-right block to the lower right block. 
-However, when we filter on AN, we are left with an "obvious group" -- all low 
-AN are easy to categorize, and when we filter on high AN, we are left with the 
-original complicated problem of separating NDAI, SD, and CORR, as seen in 
-Fig. ??. Thus, we are justified in looking only within the three-feature space of
-NDAI, SD, and CORR. This has the additional benefit of making the 
-categorization model simpler and more interpretable.
+The scatter plot matrix is demonstrated in Fig. ~\ref{fig:EDAsplom}. It seems 
+like there could be important data contributed by the upper-right block to the 
+lower right block.  However, when we filter on AN, we are left with an "obvious 
+group" -- all low AN are easy to categorize, and when we filter on high AN, we 
+are left with the original complicated problem of separating NDAI, SD, and CORR, 
+as seen in Fig. ~\ref{fig:EDAsplomANhigh}. Thus, we are justified in looking 
+only within the three- feature space of NDAI, SD, and CORR. This has the 
+additional benefit of making the categorization model simpler and more interpretable.
 
 \subsection{Spatial structure}
 While we have been currently focusing on pixel-by-pixel categorization, we are
@@ -198,9 +208,20 @@ Modeling section.
 \section{Modeling}
 
 \subsection{Feature Selection}
-In this section, we perform feature selection in a top-down manner, i.e. we begin with a full set of features, and sequentially remove "ineligible" features from both visual justification by plotting the conditional densities of different features and quantitative exanmination of features' seperability under different conditions using classical permutation test. We also use Akiake Information Criterion (AIC) to measure the relative quality of features, which takes into account both the goodness of fit of the model and the complexity.\\
+In this section, we perform feature selection in a top-down manner, i.e. we 
+begin with a full set of features, and sequentially remove "ineligible" 
+features from both visual justification by plotting the conditional densities
+of different features and quantitative exanmination of features' seperability 
+under different conditions using classical permutation test. We also use 
+Akiake Information Criterion (AIC) to measure the relative quality of features, 
+which takes into account both the goodness of fit of the model and the 
+complexity.\\
 
-In order to support classification, features' distributions should have a good separation between distinctive classes. The dissimilarity of distributions can be measured by Jensen-Shannon divergence (JSD), which can be derived from KL divergence and is symmetric distance metric. JSD is given by the following formula:
+In order to support classification, features' distributions should have a good 
+separation between distinctive classes. The dissimilarity of distributions can 
+be measured by Jensen-Shannon divergence (JSD), which can be derived 
+from KL divergence and is symmetric distance metric. JSD is given by the f
+ollowing formula:
 \begin{equation}
 JSD(P||Q) = \frac{1}{2} [KL(P||Q) + KL(P||Q)]
 \end{equation}
@@ -208,11 +229,21 @@ where $KL(P||Q)$ is the KL divergence, defined as
 \begin{equation}
 KL(P||Q) = \sum_i{ln(\frac{P}{Q})P}
 \end{equation}
-We verify the seperability of a certain feature using permutation test. The idea is to randomly permuate labels of pixels and each time obtain a JSD. The null hypothesis is that the observed JSD for a given feature is independent of the cloud/clear labelings, namely
+We verify the seperability of a certain feature using permutation test. The idea 
+is to randomly permuate labels of pixels and each time obtain a JSD. The null 
+hypothesis is that the observed JSD for a given feature is independent of the 
+cloud/clear labelings, namely
 \begin{equation}
 H_0^{Feature}:JSD_{Observed}^{Feature}=JSD_{Permutated}^{Feature}
 \end{equation}
-The result for permutation test is illustrated in Fig.??, where the histogram is obtained by shuffling the labels for 100 times and the red vertical lines denote the JSD with correct labels. We can see that for features except \textit{AF} and \textit{AN}, the true JSD significantly deviates from the JSD distribution in permutation test. In conclusion, \textit{AF} and \textit{AN} cannot achieve very high seperability and should be pushed out of our feature candidate pool.
+The result for permutation test is illustrated in Fig. ~\ref{fig:PT}, where the 
+histogram is obtained by shuffling the labels 
+for 100 times and the red vertical lines 
+denote the JSD with correct labels. We can see that for features except 
+\textit{AF} and \textit{AN}, the true JSD significantly deviates from the JSD 
+distribution in permutation test. In conclusion, \textit{AF} and \textit{AN} 
+cannot achieve very high seperability and should be pushed out of our 
+feature candidate pool.
 
 \begin{figure}[!h]
   \begin{center}
@@ -222,7 +253,13 @@ The result for permutation test is illustrated in Fig.??, where the histogram is
   \label{fig:PT}
 \end{figure}
 
-Secondly, we perform a stepwise AIC algorithm on sampled data set (all three images included) to examine the goodness of features. Stepwise AIC is a algorithm to keep tracking the information loss when removing each feature and select the model with the minimum AIC value. The AIC results are shown in Table ??. We can see that removing \textit{AF, BF, CF, AN} results in the least increase of AIC, which indicates that these four features are not very informative and thereby we will remove them from our feature pool.
+Secondly, we perform a stepwise AIC algorithm on sampled data set (all three 
+images included) to examine the goodness of features. Stepwise AIC is a 
+algorithm to keep tracking the information loss when removing each feature 
+and select the model with the minimum AIC value. The AIC results are shown 
+in Table ~\ref{tab:PermTest}. We can see that removing \textit{AF, BF, CF, AN} 
+results in the least increase of AIC, which indicates that these four features 
+are not very informative and thereby we will remove them from our feature pool.
 \begin{table}[!h]
 \centering
 \begin{tabular}{*{4}{c}}
@@ -237,12 +274,15 @@ Features & Df & Deviance & AIC\\
 - DF     & 1  & 112672   & 112688\\
 - SD     & 1  & 114236   & 114252\\
 - NDAI   & 1  & 168818   & 168834\\
-
 \end{tabular}
 \caption{Results for AIC}
+\label{tab:PermTest}
 \end{table}
 
-From the successive exclusion of features in proceeding steps, we now have four features at hand, namely \textit{NDAI, SD, CORR, DF}. We plot the conditional distribution of these four features (Fig. ??) and it is shown that they all achieve good seperability.
+From the successive exclusion of features in proceeding steps, we now have 
+four features at hand, namely \textit{NDAI, SD, CORR, DF}. We plot the 
+conditional distribution of these four features (Fig. ~\ref{fig:CD}) and it is 
+shown that they all achieve good seperability.
 
 \begin{figure}[!h]
   \begin{center}
@@ -252,7 +292,18 @@ From the successive exclusion of features in proceeding steps, we now have four 
   \label{fig:CD}
 \end{figure}
 
-In order to further justify our choice visually, we try to consider combinations of features but reduce their dimentionality to 2D for visualization purpose. Here we repeatly apply PCA to a random sample data set with different combinations of features. In the first trial, we use all features, in the second one only \textit{NDAI, SD, CORR, DF} are incorporated and in the last case the other features are used. From the resulted Fig. ??, where points with different labels are marked differently, we can tell that the second case is the best for classification, since points from two groups are more seperated that in the other two cases. This is a good justification for our choice of features in the feature selection step. In order to make a comparision with result in Bin's paper,  we will proceed our exploration on diverse classification models with four features: \textit{NDAI, SD, CORR}.
+In order to further justify our choice visually, we try to consider combinations
+of features but reduce their dimentionality to 2D for visualization purpose. 
+Here we repeatly apply PCA to a random sample data set with different 
+combinations of features. In the first trial, we use all features, in the second 
+one only \textit{NDAI, SD, CORR, DF} are incorporated and in the last case 
+the other features are used. From the resulted Fig. ~\ref{fig:PCA}, where 
+points with different labels are marked differently, we can tell that the second 
+case is the best for classification, since points from two groups are more 
+seperated that in the other two cases. This is a good justification for our 
+choice of features in the feature selection step. In order to make a comparision 
+with result in Bin's paper,  we will proceed our exploration on diverse 
+classification models with four features: \textit{NDAI, SD, CORR}.
 
 \begin{figure}[!h]
   \begin{center}
@@ -265,7 +316,19 @@ In order to further justify our choice visually, we try to consider combinations
 
 \subsection{Diverse Classification Models}
 \subsubsection{Iterative Conditional Random Field Cloud Segmentation}
-We start from the ELCM-QDA model presented in Bin's paper. ELCM-QDA algorithm basically exploits the seperability property of the feature space by thresholding feature values. However, clear and cloudy pixels are not stable in the sense that the feature values might change across time and space. In order to deal with the instability of features, thresholds are chosen by a data-adaptive way, where a mixed-Gaussian model is fitted to the data and the threshold is derived from the dip between two Gaussian distributions. The paper also used Fisher's QDA model to estimate the probability of cloudiness. The result of cloud detection using ELCM-QDA is illstrated in Fig. ??. The agreement with expert labels for three images are $93.39\%$, $93.5\%$, $82.84\%$, respectively. However, if we scrutinize the prediction and the true labels, we can  see that adjacent pixels tend to have the same labels, while ELCM-QDA features a simple thresholding without considering this spatial pattern.\\
+We start from the ELCM-QDA model presented in Bin's paper. ELCM-QDA algorithm 
+basically exploits the seperability property of the feature space by 
+thresholding feature values. However, clear and cloudy pixels are not stable 
+in the sense that the feature values might change across time and space. In 
+order to deal with the instability of features, thresholds are chosen by a 
+data-adaptive way, where a mixed-Gaussian model is fitted to the data and 
+the threshold is derived from the dip between two Gaussian distributions. 
+The paper also used Fisher's QDA model to estimate the probability of cloudiness. 
+The result of cloud detection using ELCM-QDA is illstrated in Fig. ~\ref{fig:ELCM}. 
+The agreement with expert labels for three images are $93.39\%$, $93.5\%$, 
+$82.84\%$, respectively. However, if we scrutinize the prediction and the true 
+labels, we can  see that adjacent pixels tend to have the same labels, while 
+ELCM-QDA features a simple thresholding without considering this spatial pattern.\\
 \begin{figure}[!h]
   \begin{center}
     \includegraphics[width=\columnwidth]{figures/ELCMQDA.png}
@@ -273,11 +336,28 @@ We start from the ELCM-QDA model presented in Bin's paper. ELCM-QDA algorithm ba
   \caption{Classification results of ELCM-QDA}
   \label{fig:ELCM}
 \end{figure}
-Here we present a Iterative Conditional Random Field Cloud Segmentation (ICRFCS) model which outperforms ELCM-QDA by taking into account spatial homogeneity in cloud images. ICRFCS relies on Bayesian estimation via Markov random field, in which the spatial information in an image is encoded through contextual constraints of neighboring pixels. By imposing such constraints, we expect neighboring pixels to have the same class labels. Let's formalize our algorithm as follows: For each pixel $s$, the region-type that the pixel belongs to is specified by a class label, $w_s$, which is binary in our case, i.e $w_s$ is modeled as a discrete random variable taking values in $\Lambda=\{-1,1\}$. The set of these labels $w={w_s, s\in S}$ is a random field, called the label process. The observed image features are supposed to be a realization $\textsc{F}\{f_s|s\in S\}$ from a another random field,w hcih is a function of the label process $w$. Basically, the image process $\textsc{F}$ represents the manifestation of the underlying label process. Thus, the overall ICRFCS model is composed of the hidden label process $w$ and the observable noisy image process $\textsc{F}$. ICRFCS aims to find an optimal labeling $\hat{w}$ which maximize the posterior probability $P(w|\textsc{F})$, that is the MAP estimate
+Here we present a Iterative Conditional Random Field Cloud Segmentation (ICRFCS) 
+model which outperforms ELCM-QDA by taking into account spatial homogeneity
+in cloud images. ICRFCS relies on Bayesian estimation via Markov random field, 
+in which the spatial information in an image is encoded through contextual 
+constraints of neighboring pixels. By imposing such constraints, we expect 
+neighboring pixels to have the same class labels. Let's formalize our algorithm 
+as follows: For each pixel $s$, the region-type that the pixel belongs to is 
+specified by a class label, $w_s$, which is binary in our case, i.e $w_s$ is 
+modeled as a discrete random variable taking values in $\Lambda=\{-1,1\}$. 
+The set of these labels $w={w_s, s\in S}$ is a random field, called the label 
+process. The observed image features are supposed to be a realization 
+$\textsc{F}\{f_s|s\in S\}$ from a another random field,w hcih is a function of 
+the label process $w$. Basically, the image process $\textsc{F}$ represents 
+the manifestation of the underlying label process. Thus, the overall ICRFCS 
+model is composed of the hidden label process $w$ and the observable noisy 
+image process $\textsc{F}$. ICRFCS aims to find an optimal labeling $\hat{w}$ 
+which maximize the posterior probability $P(w|\textsc{F})$, that is the MAP estimate
 \begin{equation}
 \hat{w}= arg max_{w} P(\textsc{F}|w) P(w)
 \end{equation}
-According to the derivation in [??], the optimization problem above is equivalent to the following energy minimization problem:
+According to the derivation in [??], the optimization problem above is 
+equivalent to the following energy minimization problem:
 \begin{equation}
 \hat{w} = arg min_w U(w, \textsc{F})
 \end{equation}
@@ -285,7 +365,19 @@ where the energy function $U(w, \textsc{F})$ is given by
 \begin{equation}
 U(w, \textsc{F}) = \sum_{s\in S} (ln(\sqrt{(2\pi)^n|\Sigma_{w_s}|}) + \frac{1}{2}(f_s-\mu_s)\Sigma_{w_s}^{-1}(f_s-\mu_s)^T) + \beta \sum_{\{s,r\}\in C} \delta(w_s, w_r)
 \end{equation}
-Minimizing the first term will give us the MLE estimate of labels assuming the features are independent and follow a multi-variate Gaussian distribution. The second term assign greater clique potentials if neighboring pixels have similar classes. $\beta$ is a weighting parameter controlling the importance of local homogeneity. Now, the cloud segmentation probelm is reduced to the minimization of the above function. Since, it is non-convex, combinational optimization techniques are needed to find the global minimum. Due to the computation complexity, we solve this problem in an iterative way. The idea is that we adopt the conventional MLE, while at each step we consider only one pixel and ignore goemetrical considerations and merely choose the optimal by minimizing the energy function assiciated with this pixel. We apply the algorithm until convergence. In our experiment, 5 cycles are enough for the result to be converged.
+Minimizing the first term will give us the MLE estimate of labels assuming 
+the features are independent and follow a multi-variate Gaussian distribution. 
+The second term assign greater clique potentials if neighboring pixels have 
+similar classes. $\beta$ is a weighting parameter controlling the importance 
+of local homogeneity. Now, the cloud segmentation probelm is reduced to the 
+minimization of the above function. Since, it is non-convex, combinational 
+optimization techniques are needed to find the global minimum. Due to the 
+computation complexity, we solve this problem in an iterative way. The idea is 
+that we adopt the conventional MLE, while at each step we consider only one 
+pixel and ignore goemetrical considerations and merely choose the optimal by 
+minimizing the energy function assiciated with this pixel. We apply the 
+algorithm until convergence. In our experiment, 5 cycles are enough for the 
+result to be converged.
 
 \begin{figure}[!h]
   \begin{center}
@@ -295,7 +387,10 @@ Minimizing the first term will give us the MLE estimate of labels assuming the f
   \label{fig:ICRFCS}
 \end{figure}
 
-The cloud dection result using ICRFCS is shown in Fig. ??. The accuracy of cloud detection for three images are $96.41\%, 95.42\%, 92.24\%$, respectively, which are higher than ELCM-QDA algorithm presented in original paper.
+The cloud dection result using ICRFCS is shown in Fig. ~\ref{fig:ICRFCS}. The 
+accuracy of cloud detection for three images are $96.41\%, 95.42\%, 92.24\%$, 
+respectively, which are higher than ELCM-QDA algorithm presented in original 
+paper.
 
 \subsection{Model Assessment}
 
