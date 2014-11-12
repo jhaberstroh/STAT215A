@@ -5,3 +5,4 @@ cfg.yml
 *.aux
 image*.txt
 *.pdf
+*.dvi
