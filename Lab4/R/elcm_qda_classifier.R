@@ -36,7 +36,7 @@ TrainELCMQDA <- function(data, labels, baseline_param=NULL, threshold.sd=2, thre
   parameters$thresh.SD <- baseline_parameters$thresh.SD
   parameters$thresh.CORR <- baseline_parameters$thresh.CORR
   # Perform the mixture model to find the EM-thresholded NDAI value
-  ndai.mixture = Mclust(image.one$NDAI, G = 2, modelNames = c("E", "V"))
+  ndai.mixture = Mclust(data$NDAI, G = 2, modelNames = c("E", "V"))
   ndai.mixture.mean <- ndai.mixture$parameters$mean
   ndai.mixture.var <- ndai.mixture$parameters$variance$sigmasq
   ndai.range = range(image.one$NDAI)
@@ -73,6 +73,7 @@ CostELCMQDA <- function(data, labels, parameters)
   #qda.prob.nocloud <- qda2$posterior[,1]
   qda.predict.error <- qda.predict$class != labels
   qda.err <- mean(qda.predict.error[labels!=0])
-    
-  return(qda.err)
+  print(1-qda.err)  
+  return(qda.predict$class)
 }
+
