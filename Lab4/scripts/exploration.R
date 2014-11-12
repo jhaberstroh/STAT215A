@@ -1,3 +1,7 @@
+#------------------ BEGIN HEADER -----------------------
+#------------------ BEGIN HEADER -----------------------
+#------------------ BEGIN HEADER -----------------------
+
 library(ggplot2)
 library(dplyr)
 library(optparse)
@@ -28,6 +32,11 @@ source(paste0(yaml$config$dir,'/R/exploration_func.R'))
 figname <- function(filename){
   return (paste0(yaml$config$dir,'/figures/',filename,'.png'))
 }
+
+#------------------  END  HEADER -----------------------
+#------------------  END  HEADER -----------------------
+#------------------  END  HEADER -----------------------
+
 
 # Read the datasets image1.txt and image2.txt.
 image.one = read.table(paste0(yaml$config$data, "/image1.txt"), header=F)
