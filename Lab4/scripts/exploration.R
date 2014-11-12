@@ -21,8 +21,7 @@ if (interactive) {
 
 # Load the yaml configuration file.
 yaml <- yaml.load_file(args$config)
-print(yaml$config$dir)
-print(yaml$config$figure)
+print(paste("Project directory:",yaml$config$dir))
 
 # Source our helper functions for this script.
 source(paste0(yaml$config$dir,'/R/exploration_func.R'))
