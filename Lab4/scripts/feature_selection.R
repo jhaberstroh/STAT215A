@@ -7,7 +7,6 @@ library('flexmix')
 library('reshape')
 library('dplyr')
 source('multiplot.R')
-setwd(file.path(Sys.getenv("GIT_REPO_LOC"), "Users/cusgadmin/Documents/2014fall/STAT215/Lab/Lab4_repo/Lab4"))
 
 # Get the data for three images
 image.one <- read.table('image1.txt', header=F)
