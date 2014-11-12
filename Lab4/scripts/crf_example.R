@@ -1,7 +1,24 @@
+library(optparse)
+
+option_list <- list(make_option(c("-c","--config"), default="cfg.yml", help="Location of .yml configuration file"))
+parser <- OptionParser(usage = "Hello", option_list = option_list)
+args = parse_args(parser)
+print(args$config)
+
 library(dplyr)
 library(ggplot2)
+<<<<<<< HEAD:Lab4/classifier.R
 
 
+=======
+library(yaml)
+yaml <- yaml.load_file(args$config)
+print(yaml$config$dir)
+print(yaml$config$dir)
+
+source(paste0(yaml$config$dir,'/R/','elcm_qda_classifier.R'))
+source(paste0(yaml$config$dir,'/R/','crf_classifier.R'))
+>>>>>>> d94d2e3a9c86447794c2ff202cb06480383d799a:Lab4/scripts/crf_example.R
 
 setwd(file.path(Sys.getenv("GIT_REPO_LOC"), "Users/cusgadmin/Documents/2014fall/STAT215/Lab/Lab4_repo/Lab4"))
 source('elcm_qda_classifier.R')

@@ -1,0 +1,44 @@
+!!!LUCKY NUMBER 7!!!
+Group 7 pixel classification project
+-----
+
+REQUIRED LIBRARIES:
+   yaml
+   optparse
+   dplyr
+   reshape2
+   ggplot2
+   lattice
+   MASS
+   Rcpp
+   flemix
+   FNN
+
+To run:
+   Use the command:
+   	run_all.sh /path/to/data
+   in the main directory, or else follow the following instructions:
+
+   1. Enter the "scripts" directory.
+
+   2. Create a configuration file in the style of cfg_example.yml. The suggested default file
+         name is cfg.yml. The necessary variables to set are:
+      config/dir - Absolute path to the directory containing lab4. Scripts have access to dir/R/.
+      config/data - Absolute path to the directory containing image{1..3}.txt. Example scripts
+            will not try to access files other than image{1..3}.txt.
+
+   3. Run all of the R scripts in the scripts directory to generate the figures necessary for
+         the writeup. If running interactively, please set interactive = TRUE and set variable
+         args$config to the name of your configuration file. If running as a script, provide 
+         the name of your configuration file with the -c argument.
+
+   4. Return to the main project directory, and now enter the writeup directory. Run your
+         system's Latex complier to generate the document.
+
+
+
+LIST OF SCRIPTS:
+   1. exploration.R
+   2. elcm_example.R
+   3. crf_example.R
+   4. ising_example.R

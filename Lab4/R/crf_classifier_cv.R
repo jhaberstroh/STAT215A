@@ -4,10 +4,10 @@ setwd(file.path(Sys.getenv("GIT_REPO_LOC"), "Users/cusgadmin/Documents/2014fall/
 library(dplyr)
 library(ggplot2)
 sourceCpp('crf_classifier_cpp.cpp')
-source('TrainELCMQDA.R')
- 
-crf_classifier <- function(image, iterationNum, beta = 0.1) {
-  params <- TrainELCMQDA(image, image$label)
+source('elcm_qda_classifier.R')
+
+crf_classifier_cv <- function(image.train, image, iterationNum, beta) {
+  params <- TrainELCMQDA(image.train, image.train$label)
   thresh.predict <- image$SD < params$thresh.SD | 
     (image$CORR > params$thresh.CORR & 
        image$NDAI < params$thresh.NDAI )
@@ -23,8 +23,9 @@ crf_classifier <- function(image, iterationNum, beta = 0.1) {
   # Iterative conditional modes algorithm is used to solve 
   # the optimization problem
   image$label.pre <- CrfClassifier_Posterior (iterationNum, beta, 
-                                               image$x, image$y,
-                                               image$label,
-                                               image$label.temp, image$posterior.cloud)
+                                                image$x, image$y,
+                                                image$label,
+                                                image$label.temp, image$posterior.cloud)
+  
   return (image$label.pre)
 }

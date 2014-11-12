@@ -23,8 +23,7 @@ names(image.three) <- collabs
 ## Permutation test for feautre selection
 # corresponding null hypothesis is "JS divergence of observed distributions 
 # equals t"o JS divergence of distributions after randomly permuting the labels"
-params <- "NDAI"
-
+image <- rbind(image.one, image.two, image.three)
 
 one.test <- function(label,feature) {
   label.perm <- sample(label)
@@ -37,7 +36,7 @@ one.test <- function(label,feature) {
 }
 
 # Permutation test of all features for 100 times
-round <- 100
+round <- 500
 feature.name <- c('NDAI','SD','CORR','DF','CF','BF','AF','AN')
 image.cloud <- subset(image, label == 1)
 image.nocloud <- subset(image, label == -1)
@@ -92,8 +91,10 @@ step$anova
 q1 <- ggplot(image) + geom_density(aes(x=NDAI, group=factor(label), fill=factor(label)), alpha=0.5)
 q2 <- ggplot(image) + geom_density(aes(x=SD, group=factor(label), fill=factor(label)), alpha=0.5)
 q3 <- ggplot(image) + geom_density(aes(x=CORR, group=factor(label), fill=factor(label)), alpha=0.5)
+q4 <- ggplot(image) + geom_density(aes(x=DF, group=factor(label), fill=factor(label)), alpha=0.5)
 
-multiplot(q1,q2,q3,cols = 1)
+
+multiplot(q1,q2,q3,q4,cols = 1)
 
 # PCA to visualize the seperability of different classes
 image <- subset(image.one, label != 0)
@@ -107,19 +108,19 @@ q1 <- qplot(x=PC1, y=PC2, data=scores_all, alpha = 0.8, color = factor(label),
             shape=factor(label)) +
   theme(legend.position="none") + ggtitle('PCA with all features')
 
-pca_three <-prcomp(image[,feature.name[1:3]], scale = T)
-screeplot(pca_three)
-scores_three <- data.frame(image, pca_three$x[,1:3])
-q2 <- qplot(x=PC1, y=PC2, data=scores_three, alpha = 0.8, color = factor(label), 
+pca_good <-prcomp(image[,feature.name[1:4]], scale = T)
+screeplot(pca_good)
+scores_good <- data.frame(image, pca_good$x[,1:3])
+q2 <- qplot(x=PC1, y=PC2, data=scores_good, alpha = 0.8, color = factor(label), 
             shape=factor(label)) +
-  theme(legend.position="none") + ggtitle('PCA with NDAI,SD,CORR')
+  theme(legend.position="none") + ggtitle('PCA with NDAI,SD,CORR,DF')
 
-pca_angle <- prcomp(image[,feature.name[4:8]], scale = T)
+pca_angle <- prcomp(image[,feature.name[5:8]], scale = T)
 screeplot(pca_angle)
 scores_angle <- data.frame(image, pca_angle$x[,1:3])
 q3 <- qplot(x=PC1, y=PC2, data=scores_angle,  alpha = 0.8, color = factor(label), 
             shape=factor(label)) +
-  theme(legend.position="none") + ggtitle('PCA with AN,AF,BF,CF,DF')
+  theme(legend.position="none") + ggtitle('PCA with AN,AF,BF,CF')
 
 multiplot(q1,q2,q3,cols = 1)
 
