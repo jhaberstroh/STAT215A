@@ -23,7 +23,7 @@ CVfold <- function (dt, fold){
 GenerateROC <- function(preds, truth){
   dt <- data.frame(preds = preds, truth = truth)
   dt <- arrange(dt, desc(preds))
-  print(dt)
+  #print(dt)
   num.positive <- sum(truth)
   num.negative <- length(truth)-num.positive
   true.positive <- 0
@@ -75,11 +75,9 @@ EvaluateModel <- function(preds, truth) {
   
   ROC <- GenerateROC(preds, truth)
   
-  print(
-    ggplot(data=ROC) +
-      geom_line(aes(x=fpr, y=tpr), color="blue") +
-      geom_abline(aes(slope=1, intercept=0))
-  )
+  ggplot(data=ROC) +
+    geom_line(aes(x=fpr, y=tpr), color="blue") +
+    geom_abline(aes(slope=1, intercept=0))
   
   # Calculate the AUC
   positive.classifications <-
@@ -88,7 +86,7 @@ EvaluateModel <- function(preds, truth) {
   negative.auc <- sum(positive.classifications) / sum(!truth)
   cat("AUC based on negative examples: ", negative.auc, "\n")
   
-  return(positive.auc)
+  return(negative.auc)
 }
 
 
