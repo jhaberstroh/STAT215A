@@ -8,7 +8,6 @@ library(optparse)
 library(yaml)
 library(lattice)
 library(MASS)
-library(hmeasure)
 
 # Set true if running interactively to allow specification of args$config by hand.
 interactive = FALSE 
@@ -81,7 +80,15 @@ cl2 <- CVfold(image2, 5)
 cl3 <- CVfold(image3, 5)
 
 # Generate ROC curve & calculate AUC
-EvaluateModel(pred.label1, truth.label1)
-EvaluateModel(pred.label2, truth.label2)
-EvaluateModel(pred.label3, truth.label3)
+p1 <- EvaluateModel(pred.label1, truth.label1)
+p2 <- EvaluateModel(pred.label2, truth.label2)
+p3 <- EvaluateModel(pred.label3, truth.label3)
+
+png(figname('ROC'), width=15, height=12,units="in", res=300)
+# trellis.par.set("superpose.line",png_pars.lines12) # set line colors & types in png 
+# trellis.par.set("superpose.symbol",png_pars.symbols12) # set symbol types & colors in png
+
+multiplot(p1, p2, p3, cols = 3)
+
+dev.off() # turn off png device,
 
