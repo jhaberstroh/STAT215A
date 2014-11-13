@@ -16,8 +16,10 @@ REQUIRED LIBRARIES:
 
 To run:
    Use the command:
-   	run_all.sh /path/to/data
-   in the main directory, or else follow the following instructions:
+   	run.sh /path/to/data
+   then compile writeup/Lab4_writeup.tex
+   OR
+   follow the following instructions:
 
    1. Enter the "scripts" directory.
 
@@ -37,8 +39,8 @@ To run:
 
 
 
-LIST OF SCRIPTS:
+LIST OF NECESSARY SCRIPTS:
    1. exploration.R
-   2. elcm_example.R
    3. crf_example.R
-   4. ising_example.R
+   3. feature_selection_example.R
+   4. Validation.R

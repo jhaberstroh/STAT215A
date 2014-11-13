@@ -10,15 +10,13 @@ echo "  dir: $(pwd)" >> scripts/cfg.yml
 echo "  data: $1" >> scripts/cfg.yml
 
 cd scripts
-echo "Generating EDA images"
+echo "Generating EDA images..."
 Rscript exploration.R -c cfg.yml
-echo "Generating CRF images"
+echo "Generating CRF images..."
 Rscript crf_example.R -c cfg.yml
+echo "Permutation analysis..."
+Rscript feature_selection_example.R -c cfg.yml
 echo "Cross-Validation results (no figures generated)"
-Rscript crf_example.R -c cfg.yml
-#for rfile in $(ls *.R); do
-#    Rscript rfile -c cfg.yml
-#done
+Rscript Validation.R -c cfg.yml
 
-cd ../writeup
-latex Lab4_Ruoxi.tex
+echo "To complete document generation, run pdfLaTeX on writeup/Lab4_writeup.tex"

@@ -9,8 +9,8 @@ library(yaml)
 library(lattice)
 library(MASS)
 library(FNN)
-library('flexmix')
-library('reshape')
+library(flexmix)
+library(reshape2)
 
 
 # Set true if running interactively to allow specification of args$config by hand.
