@@ -70,14 +70,11 @@ EvaluateModel <- function(preds, truth) {
   # Plot an ROC curve
   res <- 1000
   
-  cat("TPR at .5: ", CalculateTPR(.5, preds, truth), "\n")
-  cat("FPR at .5: ", CalculateFPR(.5, preds, truth), "\n")
-  
   ROC <- GenerateROC(preds, truth)
-  
-  ggplot(data=ROC) +
-    geom_line(aes(x=fpr, y=tpr), color="blue") +
-    geom_abline(aes(slope=1, intercept=0))
+  p <-  ggplot(data=ROC) +
+          geom_line(aes(x=fpr, y=tpr), color="blue") +
+          geom_abline(aes(slope=1, intercept=0))
+  print(p)
   
   # Calculate the AUC
   positive.classifications <-
@@ -86,7 +83,7 @@ EvaluateModel <- function(preds, truth) {
   negative.auc <- sum(positive.classifications) / sum(!truth)
   cat("AUC based on negative examples: ", negative.auc, "\n")
   
-  return(negative.auc)
+  return(p)
 }
 
 

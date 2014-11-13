@@ -8,7 +8,6 @@ library(optparse)
 library(yaml)
 library(lattice)
 library(MASS)
-library(hmeasure)
 
 # Set true if running interactively to allow specification of args$config by hand.
 interactive = FALSE 
@@ -93,4 +92,3 @@ print("Evaluating ROC for image 3. This will run silently for about 5 minutes. P
 png(figname('ROC_image3'), width=3, height=2.5,units="in", res=600)
 label3 <- EvaluateModel(pred.label3, truth.label3)
 dev.off()
-
