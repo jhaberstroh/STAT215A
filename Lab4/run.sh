@@ -16,7 +16,7 @@ echo "Generating CRF images..."
 Rscript crf_example.R -c cfg.yml
 echo "Permutation analysis..."
 Rscript feature_selection_example.R -c cfg.yml
-echo "Cross-Validation results (no figures generated)"
+echo "Cross-Validation results"
 Rscript Validation.R -c cfg.yml
 
 echo "To complete document generation, run pdfLaTeX on writeup/Lab4_writeup.tex"
