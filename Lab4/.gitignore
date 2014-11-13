@@ -1,1 +1,11 @@
 data
+cfg.yml
+*.png
+*.DS_Store
+*.aux
+<<<<<<< HEAD
+*.dvi
+=======
+image*.txt
+>>>>>>> classifier
+*.pdf

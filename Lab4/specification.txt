@@ -3,9 +3,9 @@ Specification for "Lab4" Code:
 EDA -> Classifier -> Validation
 
 Function specs:
-Classifier_NAME(data, labels, *args)
+TrainNAME(data, labels, *args)
 	returns parameters
-Cost_NAME(data, labels, parameters, *args)
+CostNAME(data, labels, parameters, *args)
 
 Classifier_NAME() should return best estimate of parameters that minimize Cost_NAME()
 
